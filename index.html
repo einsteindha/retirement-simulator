@@ -1,403 +1,167 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>은퇴 안전 인출 계산기 — 정원준 CFP</title>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-  <style>
-    :root {
-      --bg: #ffffff;
-      --bg2: #f5f7fa;
-      --bg3: #eef1f6;
-      --text: #1a1a2e;
-      --text2: #4a5568;
-      --text3: #718096;
-      --border: rgba(0,0,0,0.1);
-      --border2: rgba(0,0,0,0.18);
-      --radius-md: 8px;
-      --radius-lg: 12px;
-      --radius-xl: 16px;
-      --blue: #378ADD;
-      --green: #1D9E75;
-      --amber: #BA7517;
-      --red: #D85A30;
-      --purple: #8B5CF6;
-    }
-    @media (prefers-color-scheme: dark) {
-      :root {
-        --bg: #1a1b26;
-        --bg2: #24253a;
-        --bg3: #2d2e45;
-        --text: #e8eaf6;
-        --text2: #9fa8c0;
-        --text3: #6b7394;
-        --border: rgba(255,255,255,0.08);
-        --border2: rgba(255,255,255,0.15);
-      }
-    }
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans KR', sans-serif;
-      background: var(--bg3);
-      color: var(--text);
-      font-size: 14px;
-      line-height: 1.6;
-      min-height: 100vh;
-    }
-    /* 헤더 */
-    .header {
-      background: #0D1B3E;
-      color: #fff;
-      padding: 20px 24px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 16px;
-      flex-wrap: wrap;
-    }
-    .header-title { font-size: 18px; font-weight: 700; color: #E8C97E; }
-    .header-sub { font-size: 12px; color: #B0BAD4; margin-top: 2px; }
-    .header-badge {
-      background: #C9A84C;
-      color: #0D1B3E;
-      font-size: 11px;
-      font-weight: 700;
-      padding: 4px 10px;
-      border-radius: 20px;
-    }
-    /* 레이아웃 */
-    .container { max-width: 960px; margin: 0 auto; padding: 24px 16px; }
-    .phase { margin-bottom: 24px; }
-    .pt {
-      font-size: 11px; font-weight: 600; letter-spacing: .08em;
-      text-transform: uppercase; color: var(--text3);
-      margin-bottom: 12px; padding-bottom: 6px;
-      border-bottom: 1px solid var(--border);
-    }
-    .g2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; }
-    .ic {
-      background: var(--bg);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-lg);
-      padding: 12px 14px;
-    }
-    .il {
-      font-size: 12px; color: var(--text2); margin-bottom: 7px;
-      display: flex; justify-content: space-between; align-items: baseline;
-    }
-    .iv { font-size: 13px; font-weight: 600; color: var(--text); }
-    input[type=range] {
-      width: 100%; margin-top: 2px;
-      accent-color: var(--blue);
-    }
-    .err { font-size: 11px; color: var(--red); margin-top: 4px; min-height: 14px; }
-    .sn {
-      font-size: 11px; color: var(--text2); margin-top: 5px;
-      padding: 5px 8px; background: var(--bg2);
-      border-radius: var(--radius-md); line-height: 1.5;
-    }
-    /* 배우자 토글 */
-    .sp-tog {
-      display: flex; align-items: center; gap: 12px;
-      padding: 11px 15px; background: var(--bg);
-      border: 1px solid var(--border); border-radius: var(--radius-lg);
-      margin-bottom: 10px; cursor: pointer; user-select: none;
-    }
-    .tr {
-      width: 40px; height: 22px; border-radius: 11px;
-      background: var(--border2); position: relative;
-      flex-shrink: 0; transition: background .2s;
-    }
-    .tr.on { background: var(--blue); }
-    .th {
-      width: 18px; height: 18px; border-radius: 50%;
-      background: #fff; position: absolute; top: 2px; left: 2px;
-      transition: left .2s; box-shadow: 0 1px 3px rgba(0,0,0,.2);
-    }
-    .tr.on .th { left: 20px; }
-    .sp-sec { overflow: hidden; transition: max-height .35s ease; max-height: 0; }
-    .sp-sec.open { max-height: 700px; }
-    /* 포트폴리오 탭 */
-    .port-tabs {
-      display: flex; border: 1px solid var(--border);
-      border-radius: var(--radius-lg); overflow: hidden; margin-bottom: 12px;
-    }
-    .port-tab {
-      flex: 1; padding: 9px 8px; font-size: 12px; font-weight: 500;
-      border: none; border-right: 1px solid var(--border);
-      background: var(--bg); color: var(--text2);
-      cursor: pointer; text-align: center; transition: background .15s;
-    }
-    .port-tab:last-child { border-right: none; }
-    .port-tab.active { background: var(--bg2); color: var(--text); font-weight: 600; }
-    .port-panel { display: none; }
-    .port-panel.active { display: block; }
-    .asset-header {
-      display: grid; grid-template-columns: 100px 1fr 1fr 1fr;
-      gap: 8px; font-size: 10px; color: var(--text3);
-      margin-bottom: 6px; padding-bottom: 4px;
-      border-bottom: 1px solid var(--border);
-    }
-    .asset-row {
-      display: grid; grid-template-columns: 100px 1fr 1fr 1fr;
-      gap: 8px; align-items: center; margin-bottom: 8px;
-    }
-    .asset-label { font-size: 12px; font-weight: 500; }
-    .asset-input {
-      width: 100%; padding: 5px 8px;
-      border: 1px solid var(--border2);
-      border-radius: var(--radius-md);
-      background: var(--bg); color: var(--text); font-size: 12px;
-    }
-    .port-result {
-      display: grid; grid-template-columns: repeat(3,1fr);
-      gap: 8px; margin-top: 12px; padding-top: 12px;
-      border-top: 1px solid var(--border);
-    }
-    .pr-item {
-      background: var(--bg2); border-radius: var(--radius-md);
-      padding: 8px 10px; text-align: center;
-    }
-    .pr-label { font-size: 10px; color: var(--text2); }
-    .pr-val { font-size: 15px; font-weight: 600; margin-top: 2px; }
-    /* 인생 단계 */
-    .stage-grid { display: grid; gap: 8px; }
-    .stage-row {
-      background: var(--bg); border: 1px solid var(--border);
-      border-radius: var(--radius-lg); padding: 11px 14px;
-    }
-    .stage-header {
-      display: flex; align-items: center; gap: 10px;
-      margin-bottom: 8px; flex-wrap: wrap;
-    }
-    .stage-badge {
-      display: inline-block; font-size: 11px;
-      padding: 2px 9px; border-radius: 4px; font-weight: 600; white-space: nowrap;
-    }
-    .stage-toggle {
-      display: flex; align-items: center; gap: 6px;
-      font-size: 12px; color: var(--text2);
-      cursor: pointer; user-select: none; margin-left: auto;
-    }
-    .mini-tr {
-      width: 30px; height: 17px; border-radius: 9px;
-      background: var(--border2); position: relative;
-      flex-shrink: 0; transition: background .15s;
-    }
-    .mini-tr.on { background: var(--blue); }
-    .mini-th {
-      width: 13px; height: 13px; border-radius: 50%;
-      background: #fff; position: absolute; top: 2px; left: 2px;
-      transition: left .15s; box-shadow: 0 1px 2px rgba(0,0,0,.2);
-    }
-    .mini-tr.on .mini-th { left: 15px; }
-    .stage-body { display: none; }
-    .stage-body.open { display: block; }
-    .stage-inputs { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; }
-    /* 이벤트 */
-    .event-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
-    .event-item {
-      display: grid; grid-template-columns: 1fr 1fr 1fr auto;
-      gap: 8px; align-items: end;
-      background: var(--bg); border: 1px solid var(--border);
-      border-radius: var(--radius-lg); padding: 10px 12px;
-    }
-    .event-input {
-      width: 100%; padding: 5px 8px;
-      border: 1px solid var(--border2);
-      border-radius: var(--radius-md);
-      background: var(--bg); color: var(--text); font-size: 12px;
-    }
-    .event-label { font-size: 10px; color: var(--text2); margin-bottom: 3px; }
-    .add-btn {
-      display: flex; align-items: center; gap: 6px;
-      padding: 8px 14px; font-size: 12px; font-weight: 500;
-      border: 1px solid var(--border2); border-radius: var(--radius-md);
-      background: var(--bg); color: var(--text2); cursor: pointer;
-    }
-    .add-btn:hover { background: var(--bg2); }
-    .del-btn {
-      padding: 4px 8px; font-size: 18px; border: none;
-      background: none; color: var(--text3); cursor: pointer;
-      border-radius: var(--radius-md); line-height: 1;
-    }
-    .del-btn:hover { color: var(--red); }
-    /* 공적연금 */
-    .pw { display: grid; gap: 10px; }
-    .pp {
-      background: var(--bg); border: 1px solid var(--border);
-      border-radius: var(--radius-lg); padding: 13px 15px;
-    }
-    .ls-badge {
-      display: inline-block; font-size: 11px;
-      padding: 2px 8px; border-radius: 4px; font-weight: 600; margin-bottom: 9px;
-    }
-    .bme { background: #EBF3FF; color: #185FA5; }
-    .bsp { background: #E1F5EE; color: #0F6E56; }
-    .bB { background: #FAECE7; color: #993C1D; }
-    .bC { background: #FFF3CD; color: #7A5800; }
-    .ttabs { display: flex; gap: 4px; margin-bottom: 9px; }
-    .tb {
-      flex: 1; padding: 6px 3px; font-size: 11px; font-weight: 500;
-      border: 1px solid var(--border2); border-radius: var(--radius-md);
-      background: var(--bg); color: var(--text2); cursor: pointer;
-      text-align: center; line-height: 1.3; transition: all .15s;
-    }
-    .tb.early.active { background: var(--red); color: #fff; border-color: var(--red); }
-    .tb.normal.active { background: var(--blue); color: #fff; border-color: var(--blue); }
-    .tb.defer.active { background: var(--green); color: #fff; border-color: var(--green); }
-    .pdg { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-top: 9px; }
-    .pdi { background: var(--bg2); border-radius: var(--radius-md); padding: 7px 9px; }
-    .pdi-l { font-size: 10px; color: var(--text2); margin-bottom: 2px; }
-    .pdi-v { font-size: 13px; font-weight: 600; }
-    .pdi-s { font-size: 10px; color: var(--text3); }
-    .pt-bar2 {
-      background: var(--bg2); border-radius: var(--radius-lg);
-      padding: 10px 14px; margin-top: 10px;
-      display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
-    }
-    .pti { text-align: center; }
-    .ptl { font-size: 11px; color: var(--text2); }
-    .ptv { font-size: 14px; font-weight: 600; }
-    .ptsep { color: var(--border2); font-size: 15px; }
-    .pn {
-      font-size: 11px; color: var(--text2); background: var(--bg2);
-      padding: 5px 9px; border-radius: var(--radius-md);
-      margin-top: 7px; line-height: 1.55;
-    }
-    /* 독거 공적연금 */
-    .solo-pension-card {
-      background: var(--bg); border: 1px solid var(--border);
-      border-radius: var(--radius-lg); padding: 14px 16px;
-    }
-    .solo-pension-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-    .solo-col {
-      padding: 12px 14px; border-radius: var(--radius-md);
-      border: 1px solid var(--border);
-    }
-    .solo-col-title { font-size: 12px; font-weight: 600; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
-    .pension-item-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
-    .pension-item-label { color: var(--text2); min-width: 90px; font-size: 11px; }
-    .pension-item-input {
-      flex: 1; padding: 5px 8px;
-      border: 1px solid var(--border2); border-radius: var(--radius-md);
-      background: var(--bg); color: var(--text); font-size: 12px;
-    }
-    .pension-item-unit { font-size: 11px; color: var(--text2); white-space: nowrap; }
-    .solo-total { margin-top: 10px; padding: 8px 12px; border-radius: var(--radius-md); font-size: 13px; font-weight: 600; text-align: center; }
-    .solo-total-b { background: #FAECE7; color: #993C1D; }
-    .solo-total-c { background: #FFF3CD; color: #7A5800; }
-    /* 기대수명 */
-    .ls-grid { display: grid; gap: 10px; }
-    .ls-person {
-      padding: 12px 14px; border-radius: var(--radius-md);
-      border: 1px solid var(--border);
-    }
-    .ls-derived { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; margin-top: 8px; }
-    .lsd { background: var(--bg2); border-radius: var(--radius-md); padding: 6px 8px; text-align: center; }
-    .lsd-label { font-size: 10px; color: var(--text2); }
-    .lsd-val { font-size: 13px; font-weight: 600; margin-top: 2px; }
-    .ls-summary {
-      margin-top: 10px; padding: 9px 13px; background: var(--bg2);
-      border-radius: var(--radius-md); font-size: 12px; line-height: 1.7; color: var(--text2);
-    }
-    /* 시나리오 탭 */
-    .sc-tabs {
-      display: flex; border: 1px solid var(--border);
-      border-radius: var(--radius-lg); overflow: hidden; margin-bottom: 18px;
-    }
-    .sc-btn {
-      flex: 1; padding: 12px 6px; font-size: 12px; font-weight: 500;
-      border: none; border-right: 1px solid var(--border);
-      background: var(--bg); color: var(--text2);
-      cursor: pointer; text-align: center; line-height: 1.5; transition: background .15s;
-    }
-    .sc-btn:last-child { border-right: none; }
-    .sc-btn.act-a { background: #EBF3FF; color: #185FA5; }
-    .sc-btn.act-b { background: #FAECE7; color: #993C1D; }
-    .sc-btn.act-c { background: #FFF3CD; color: #7A5800; }
-    .stag {
-      display: inline-block; font-size: 10px;
-      padding: 1px 5px; border-radius: 3px;
-      margin-left: 3px; font-weight: 600; vertical-align: middle;
-    }
-    .tag-a { background: #B5D4F4; color: #0C447C; }
-    .tag-b { background: #F5C4B3; color: #993C1D; }
-    .tag-c { background: #FAC775; color: #633806; }
-    /* 결과 패널 */
-    .rp { display: none; }
-    .rp.active { display: block; }
-    .sh { padding: 11px 15px; border-radius: var(--radius-lg); margin-bottom: 14px; font-size: 12px; line-height: 1.6; }
-    .sh-a { background: #EBF3FF; border-left: 3px solid var(--blue); }
-    .sh-b { background: #FAECE7; border-left: 3px solid var(--red); }
-    .sh-c { background: #FFF3CD; border-left: 3px solid var(--amber); }
-    .rb { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 9px; margin-bottom: 1.3rem; }
-    .met { background: var(--bg2); border-radius: var(--radius-md); padding: 12px 14px; }
-    .ml { font-size: 12px; color: var(--text2); margin-bottom: 3px; }
-    .mv { font-size: 20px; font-weight: 700; line-height: 1.2; }
-    .ms { font-size: 11px; color: var(--text3); margin-top: 3px; }
-    .ok { color: var(--green); }
-    .warn { color: var(--amber); }
-    .danger { color: var(--red); }
-    .cc {
-      background: var(--bg); border: 1px solid var(--border);
-      border-radius: var(--radius-lg); padding: 14px; margin-bottom: 1.3rem;
-    }
-    .leg { display: flex; gap: 12px; flex-wrap: wrap; }
-    .li { display: flex; align-items: center; gap: 4px; font-size: 11px; color: var(--text2); }
-    .ld { width: 10px; height: 3px; border-radius: 2px; }
-    .adv { padding: 13px 15px; font-size: 13px; line-height: 1.7; margin-bottom: 1rem; border-radius: var(--radius-lg); }
-    .adv.ok { background: #E1F5EE; border-left: 3px solid var(--green); }
-    .adv.warn { background: #FFF3CD; border-left: 3px solid var(--amber); }
-    .adv.danger { background: #FAECE7; border-left: 3px solid var(--red); }
-    .tag { display: inline-block; font-size: 11px; padding: 2px 7px; border-radius: 4px; font-weight: 600; margin-right: 5px; }
-    .tok { background: #E1F5EE; color: #0F6E56; }
-    .twarn { background: #FFF3CD; color: #7A5800; }
-    .tdanger { background: #FAECE7; color: #993C1D; }
-    .divider { height: 1px; background: var(--border); margin: 1.5rem 0; }
-    /* 3자 비교 */
-    .cmp3 {
-      display: none; grid-template-columns: 1fr 1px 1fr 1px 1fr;
-      background: var(--bg2); border-radius: var(--radius-lg);
-      border: 1px solid var(--border); margin-bottom: 1.5rem; overflow: hidden;
-    }
-    .cmp3-col { padding: 12px 14px; }
-    .cmp3-sep { background: var(--border); }
-    .cmp3-ttl { font-size: 11px; font-weight: 600; color: var(--text2); margin-bottom: 8px; }
-    .cmp3-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px; font-size: 12px; }
-    .cmp3-lbl { color: var(--text2); }
-    .cmp3-val { font-weight: 600; }
-    .cmp3-period { font-size: 10px; color: var(--text3); margin-top: 4px; }
-    .cmp3-msg { grid-column: 1/-1; padding: 9px 14px; border-top: 1px solid var(--border); font-size: 12px; line-height: 1.6; }
-    /* 현금흐름 테이블 */
-    .cf-table { width: 100%; border-collapse: collapse; font-size: 11px; margin-top: 10px; }
-    .cf-table th { padding: 5px 8px; text-align: left; font-weight: 600; font-size: 10px; color: var(--text2); border-bottom: 1px solid var(--border); background: var(--bg2); }
-    .cf-table td { padding: 5px 8px; border-bottom: 1px solid var(--border); }
-    .cf-table tr:last-child td { border-bottom: none; }
-    .cf-stage-label { font-size: 10px; padding: 1px 6px; border-radius: 3px; font-weight: 600; }
-    /* 모바일 */
-    @media (max-width: 600px) {
-      .event-item { grid-template-columns: 1fr 1fr; }
-      .event-item > div:nth-child(3) { grid-column: 1/-1; }
-      .solo-pension-grid { grid-template-columns: 1fr; }
-      .asset-row { grid-template-columns: 80px 1fr 1fr; }
-      .asset-row > input:last-child { display: none; }
-      .asset-header > span:last-child { display: none; }
-      .cmp3 { grid-template-columns: 1fr; }
-      .cmp3-sep { display: none; }
-    }
-    /* 푸터 */
-    .footer {
-      text-align: center; padding: 20px;
-      font-size: 11px; color: var(--text3);
-      border-top: 1px solid var(--border);
-      margin-top: 32px;
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>은퇴 안전 인출 계산기 — 정원준 CFP</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+:root{
+  --bg:#fff;--bg2:#f5f7fa;--bg3:#eef1f6;
+  --text:#1a1a2e;--text2:#4a5568;--text3:#718096;
+  --border:rgba(0,0,0,.1);--border2:rgba(0,0,0,.18);
+  --radius:8px;--radius-lg:12px;
+  --blue:#378ADD;--green:#1D9E75;--amber:#BA7517;--red:#D85A30;--purple:#8B5CF6;
+}
+@media(prefers-color-scheme:dark){
+  :root{--bg:#1a1b26;--bg2:#24253a;--bg3:#2d2e45;--text:#e8eaf6;--text2:#9fa8c0;--text3:#6b7394;--border:rgba(255,255,255,.08);--border2:rgba(255,255,255,.15);}
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans KR',sans-serif;background:var(--bg3);color:var(--text);font-size:14px;line-height:1.6}
+.header{background:#0D1B3E;color:#fff;padding:18px 24px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.header-title{font-size:17px;font-weight:700;color:#E8C97E}
+.header-sub{font-size:12px;color:#B0BAD4;margin-top:2px}
+.header-badge{background:#C9A84C;color:#0D1B3E;font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px;white-space:nowrap}
+.container{max-width:960px;margin:0 auto;padding:20px 14px}
+.phase{margin-bottom:20px}
+.pt{font-size:11px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--text3);margin-bottom:10px;padding-bottom:5px;border-bottom:1px solid var(--border)}
+.g2{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:9px}
+.ic{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-lg);padding:11px 13px}
+.il{font-size:12px;color:var(--text2);margin-bottom:6px;display:flex;justify-content:space-between;align-items:baseline}
+.iv{font-size:13px;font-weight:600;color:var(--text)}
+input[type=range]{width:100%;margin-top:2px;accent-color:var(--blue)}
+.err{font-size:11px;color:var(--red);margin-top:4px;min-height:14px}
+.sn{font-size:11px;color:var(--text2);margin-top:5px;padding:5px 8px;background:var(--bg2);border-radius:var(--radius);line-height:1.5}
+/* 토글 */
+.sp-tog{display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-lg);margin-bottom:9px;cursor:pointer;user-select:none}
+.tr{width:40px;height:22px;border-radius:11px;background:var(--border2);position:relative;flex-shrink:0;transition:background .2s}
+.tr.on{background:var(--blue)}.th{width:18px;height:18px;border-radius:50%;background:#fff;position:absolute;top:2px;left:2px;transition:left .2s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.tr.on .th{left:20px}
+.sp-sec{overflow:hidden;transition:max-height .35s ease;max-height:0}.sp-sec.open{max-height:700px}
+/* 포트폴리오 탭 */
+.port-tabs{display:flex;border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;margin-bottom:10px}
+.port-tab{flex:1;padding:8px;font-size:12px;font-weight:500;border:none;border-right:1px solid var(--border);background:var(--bg);color:var(--text2);cursor:pointer;text-align:center;transition:background .15s}
+.port-tab:last-child{border-right:none}.port-tab.active{background:var(--bg2);color:var(--text);font-weight:600}
+.port-panel{display:none}.port-panel.active{display:block}
+.asset-header{display:grid;grid-template-columns:100px 1fr 1fr 1fr;gap:8px;font-size:10px;color:var(--text3);margin-bottom:5px;padding-bottom:4px;border-bottom:1px solid var(--border)}
+.asset-row{display:grid;grid-template-columns:100px 1fr 1fr 1fr;gap:8px;align-items:center;margin-bottom:7px}
+.asset-label{font-size:12px;font-weight:500}
+.asset-input{width:100%;padding:5px 7px;border:1px solid var(--border2);border-radius:var(--radius);background:var(--bg);color:var(--text);font-size:12px}
+.port-result{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px;padding-top:10px;border-top:1px solid var(--border)}
+.pr-item{background:var(--bg2);border-radius:var(--radius);padding:8px 10px;text-align:center}
+.pr-label{font-size:10px;color:var(--text2)}.pr-val{font-size:15px;font-weight:600;margin-top:2px}
+/* 인생 단계 */
+.stage-grid{display:grid;gap:7px}
+.stage-row{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-lg);padding:10px 13px}
+.stage-header{display:flex;align-items:center;gap:9px;margin-bottom:7px;flex-wrap:wrap}
+.stage-badge{display:inline-block;font-size:11px;padding:2px 8px;border-radius:4px;font-weight:600;white-space:nowrap}
+.stage-toggle{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--text2);cursor:pointer;user-select:none;margin-left:auto}
+.mini-tr{width:30px;height:17px;border-radius:9px;background:var(--border2);position:relative;flex-shrink:0;transition:background .15s}
+.mini-tr.on{background:var(--blue)}.mini-th{width:13px;height:13px;border-radius:50%;background:#fff;position:absolute;top:2px;left:2px;transition:left .15s;box-shadow:0 1px 2px rgba(0,0,0,.2)}
+.mini-tr.on .mini-th{left:15px}
+.stage-body{display:none}.stage-body.open{display:block}
+.stage-inputs{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px}
+.stage-locked{opacity:.5;pointer-events:none}
+/* 이벤트·현금흐름·정액연금 */
+.flow-list{display:flex;flex-direction:column;gap:7px;margin-bottom:9px}
+.flow-item{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-lg);padding:9px 11px}
+.flow-grid{display:grid;gap:7px}
+.flow-grid-3{grid-template-columns:1fr 1fr 1fr auto}
+.flow-grid-4{grid-template-columns:1fr 1fr 1fr 1fr auto}
+.flow-input{width:100%;padding:5px 7px;border:1px solid var(--border2);border-radius:var(--radius);background:var(--bg);color:var(--text);font-size:12px}
+.flow-label{font-size:10px;color:var(--text2);margin-bottom:3px}
+.add-btn{display:flex;align-items:center;gap:5px;padding:7px 12px;font-size:12px;font-weight:500;border:1px solid var(--border2);border-radius:var(--radius);background:var(--bg);color:var(--text2);cursor:pointer}
+.add-btn:hover{background:var(--bg2)}
+.del-btn{padding:3px 7px;font-size:17px;border:none;background:none;color:var(--text3);cursor:pointer;border-radius:var(--radius);line-height:1;align-self:flex-end}
+.del-btn:hover{color:var(--red)}
+/* 공적연금 */
+.pw{display:grid;gap:9px}
+.pp{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-lg);padding:12px 14px}
+.ls-badge{display:inline-block;font-size:11px;padding:2px 8px;border-radius:4px;font-weight:600;margin-bottom:8px}
+.bme{background:#EBF3FF;color:#185FA5}.bsp{background:#E1F5EE;color:#0F6E56}
+.bB{background:#FAECE7;color:#993C1D}.bC{background:#FFF3CD;color:#7A5800}
+.ttabs{display:flex;gap:4px;margin-bottom:8px}
+.tb{flex:1;padding:5px 3px;font-size:11px;font-weight:500;border:1px solid var(--border2);border-radius:var(--radius);background:var(--bg);color:var(--text2);cursor:pointer;text-align:center;line-height:1.3;transition:all .15s}
+.tb.early.active{background:var(--red);color:#fff;border-color:var(--red)}
+.tb.normal.active{background:var(--blue);color:#fff;border-color:var(--blue)}
+.tb.defer.active{background:var(--green);color:#fff;border-color:var(--green)}
+.pdg{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-top:8px}
+.pdi{background:var(--bg2);border-radius:var(--radius);padding:6px 8px}
+.pdi-l{font-size:10px;color:var(--text2);margin-bottom:2px}.pdi-v{font-size:13px;font-weight:600}.pdi-s{font-size:10px;color:var(--text3)}
+.pt-bar2{background:var(--bg2);border-radius:var(--radius-lg);padding:9px 13px;margin-top:9px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.pti{text-align:center}.ptl{font-size:11px;color:var(--text2)}.ptv{font-size:14px;font-weight:600}
+.ptsep{color:var(--border2);font-size:14px}
+.pn{font-size:11px;color:var(--text2);background:var(--bg2);padding:5px 8px;border-radius:var(--radius);margin-top:6px;line-height:1.5}
+/* 독거 공적연금 */
+.solo-pension-card{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-lg);padding:13px 15px}
+.solo-pension-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.solo-col{padding:11px 13px;border-radius:var(--radius);border:1px solid var(--border)}
+.solo-col-title{font-size:12px;font-weight:600;margin-bottom:9px;display:flex;align-items:center;gap:7px}
+.pension-item-row{display:flex;align-items:center;gap:7px;margin-bottom:7px}
+.pension-item-label{color:var(--text2);min-width:90px;font-size:11px}
+.pension-item-input{flex:1;padding:5px 7px;border:1px solid var(--border2);border-radius:var(--radius);background:var(--bg);color:var(--text);font-size:12px}
+.pension-item-unit{font-size:11px;color:var(--text2);white-space:nowrap}
+.solo-total{margin-top:9px;padding:7px 11px;border-radius:var(--radius);font-size:13px;font-weight:600;text-align:center}
+.solo-total-b{background:#FAECE7;color:#993C1D}.solo-total-c{background:#FFF3CD;color:#7A5800}
+/* 기대수명 */
+.ls-grid{display:grid;gap:9px}
+.ls-person{padding:11px 13px;border-radius:var(--radius);border:1px solid var(--border)}
+.ls-derived{display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px;margin-top:7px}
+.lsd{background:var(--bg2);border-radius:var(--radius);padding:6px 8px;text-align:center}
+.lsd-label{font-size:10px;color:var(--text2)}.lsd-val{font-size:13px;font-weight:600;margin-top:2px}
+.ls-summary{margin-top:9px;padding:8px 12px;background:var(--bg2);border-radius:var(--radius);font-size:12px;line-height:1.7;color:var(--text2)}
+/* 시나리오 탭 */
+.sc-tabs{display:flex;border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;margin-bottom:16px}
+.sc-btn{flex:1;padding:11px 6px;font-size:12px;font-weight:500;border:none;border-right:1px solid var(--border);background:var(--bg);color:var(--text2);cursor:pointer;text-align:center;line-height:1.5;transition:background .15s}
+.sc-btn:last-child{border-right:none}
+.sc-btn.act-a{background:#EBF3FF;color:#185FA5}
+.sc-btn.act-b{background:#FAECE7;color:#993C1D}
+.sc-btn.act-c{background:#FFF3CD;color:#7A5800}
+.stag{display:inline-block;font-size:10px;padding:1px 5px;border-radius:3px;margin-left:3px;font-weight:600;vertical-align:middle}
+.tag-a{background:#B5D4F4;color:#0C447C}.tag-b{background:#F5C4B3;color:#993C1D}.tag-c{background:#FAC775;color:#633806}
+.rp{display:none}.rp.active{display:block}
+.sh{padding:10px 14px;border-radius:var(--radius-lg);margin-bottom:12px;font-size:12px;line-height:1.6}
+.sh-a{background:#EBF3FF;border-left:3px solid var(--blue)}
+.sh-b{background:#FAECE7;border-left:3px solid var(--red)}
+.sh-c{background:#FFF3CD;border-left:3px solid var(--amber)}
+.rb{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-bottom:1.2rem}
+.met{background:var(--bg2);border-radius:var(--radius);padding:11px 13px}
+.ml{font-size:12px;color:var(--text2);margin-bottom:3px}.mv{font-size:20px;font-weight:700;line-height:1.2}.ms{font-size:11px;color:var(--text3);margin-top:3px}
+.ok{color:var(--green)}.warn{color:var(--amber)}.danger{color:var(--red)}
+.cc{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-lg);padding:13px;margin-bottom:1.2rem}
+.leg{display:flex;gap:11px;flex-wrap:wrap}
+.li{display:flex;align-items:center;gap:4px;font-size:11px;color:var(--text2)}
+.ld{width:10px;height:3px;border-radius:2px}
+.adv{padding:12px 14px;font-size:13px;line-height:1.7;margin-bottom:.9rem;border-radius:var(--radius-lg)}
+.adv.ok{background:#E1F5EE;border-left:3px solid var(--green)}
+.adv.warn{background:#FFF3CD;border-left:3px solid var(--amber)}
+.adv.danger{background:#FAECE7;border-left:3px solid var(--red)}
+.tag{display:inline-block;font-size:11px;padding:2px 7px;border-radius:4px;font-weight:600;margin-right:5px}
+.tok{background:#E1F5EE;color:#0F6E56}.twarn{background:#FFF3CD;color:#7A5800}.tdanger{background:#FAECE7;color:#993C1D}
+.divider{height:1px;background:var(--border);margin:1.4rem 0}
+.cmp3{display:none;grid-template-columns:1fr 1px 1fr 1px 1fr;background:var(--bg2);border-radius:var(--radius-lg);border:1px solid var(--border);margin-bottom:1.4rem;overflow:hidden}
+.cmp3-col{padding:11px 13px}.cmp3-sep{background:var(--border)}
+.cmp3-ttl{font-size:11px;font-weight:600;color:var(--text2);margin-bottom:7px}
+.cmp3-row{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px;font-size:12px}
+.cmp3-lbl{color:var(--text2)}.cmp3-val{font-weight:600}
+.cmp3-period{font-size:10px;color:var(--text3);margin-top:3px}
+.cmp3-msg{grid-column:1/-1;padding:8px 13px;border-top:1px solid var(--border);font-size:12px;line-height:1.6}
+.cf-table{width:100%;border-collapse:collapse;font-size:11px;margin-top:9px}
+.cf-table th{padding:5px 7px;text-align:left;font-weight:600;font-size:10px;color:var(--text2);border-bottom:1px solid var(--border);background:var(--bg2)}
+.cf-table td{padding:5px 7px;border-bottom:1px solid var(--border)}
+.cf-table tr:last-child td{border-bottom:none}
+.cf-stage-label{font-size:10px;padding:1px 6px;border-radius:3px;font-weight:600}
+.footer{text-align:center;padding:18px;font-size:11px;color:var(--text3);border-top:1px solid var(--border);margin-top:28px}
+@media(max-width:600px){
+  .flow-grid-4{grid-template-columns:1fr 1fr}
+  .solo-pension-grid{grid-template-columns:1fr}
+  .asset-row{grid-template-columns:80px 1fr 1fr}
+  .asset-row>input:last-child,.asset-header>span:last-child{display:none}
+  .cmp3{grid-template-columns:1fr}.cmp3-sep{display:none}
+}
+</style>
 </head>
 <body>
-
 <div class="header">
   <div>
     <div class="header-title">은퇴 안전 인출 계산기</div>
@@ -405,16 +169,15 @@
   </div>
   <span class="header-badge">교육용 참고자료</span>
 </div>
-
 <div class="container">
 
 <!-- 1. 본인 -->
 <div class="phase">
   <div class="pt">1 · 본인 정보</div>
   <div class="g2">
-    <div class="ic"><div class="il">현재 나이 <span class="iv" id="l-age">55세</span></div><input type="range" id="age" min="40" max="70" step="1" value="55"></div>
-    <div class="ic"><div class="il">은퇴 예정 나이 <span class="iv" id="l-retire">62세</span></div><input type="range" id="retire" min="50" max="75" step="1" value="62"><div class="err" id="err-retire"></div></div>
-    <div class="ic"><div class="il">현재 총 자산 <span class="iv" id="l-asset">5억원</span></div><input type="range" id="asset" min="1" max="30" step="0.5" value="5"></div>
+    <div class="ic"><div class="il">현재 나이 <span class="iv" id="l-age">55세</span></div><input type="range" id="age" min="20" max="90" step="1" value="55"></div>
+    <div class="ic"><div class="il">은퇴 예정 나이 <span class="iv" id="l-retire">62세</span></div><input type="range" id="retire" min="40" max="90" step="1" value="62"><div class="err" id="err-retire"></div></div>
+    <div class="ic"><div class="il">현재 총 자산 <span class="iv" id="l-asset">5억원</span></div><input type="range" id="asset" min="0" max="800" step="1" value="50"></div>
     <div class="ic"><div class="il">은퇴까지 연평균 저축 <span class="iv" id="l-save">500만원/년</span></div><input type="range" id="save" min="0" max="5000" step="100" value="500"></div>
   </div>
 </div>
@@ -429,8 +192,8 @@
   </div>
   <div class="sp-sec" id="sp-sec">
     <div class="g2">
-      <div class="ic"><div class="il">배우자 현재 나이 <span class="iv" id="l-sp-age">52세</span></div><input type="range" id="sp-age" min="40" max="70" step="1" value="52"></div>
-      <div class="ic"><div class="il">배우자 은퇴 예정 나이 <span class="iv" id="l-sp-retire">60세</span></div><input type="range" id="sp-retire" min="50" max="75" step="1" value="60"><div class="err" id="err-sp-retire"></div></div>
+      <div class="ic"><div class="il">배우자 현재 나이 <span class="iv" id="l-sp-age">52세</span></div><input type="range" id="sp-age" min="20" max="90" step="1" value="52"></div>
+      <div class="ic"><div class="il">배우자 은퇴 예정 나이 <span class="iv" id="l-sp-retire">60세</span></div><input type="range" id="sp-retire" min="40" max="90" step="1" value="60"><div class="err" id="err-sp-retire"></div></div>
       <div class="ic"><div class="il">배우자 연평균 저축 <span class="iv" id="l-sp-save">400만원/년</span></div><input type="range" id="sp-save" min="0" max="5000" step="100" value="400"></div>
     </div>
   </div>
@@ -475,20 +238,20 @@
       <button class="port-tab" id="port-tab-detail" onclick="switchPort('detail')">자산군별 상세<br><span style="font-size:10px;font-weight:400">비중·수익률·변동성 각각 입력</span></button>
     </div>
     <div class="port-panel active" id="port-panel-simple">
-      <div class="sn" style="margin-bottom:10px">CFP 상담 결과 또는 본인 추정치를 직접 입력하세요. 불확실하다면 수익률 6~7%, 변동성 10~15%가 균형 잡힌 시작점입니다.</div>
+      <div class="sn" style="margin-bottom:9px">CFP 상담 결과 또는 본인 추정치를 직접 입력하세요. 토스·뱅크샐러드 등 마이데이터 앱에서 전체 금융자산을 확인한 후 입력하시면 더 정확합니다.</div>
       <div class="g2">
         <div class="ic"><div class="il">포트폴리오 기대수익률 <span class="iv" id="l-ret-s">6.5%</span></div><input type="range" id="ret-simple" min="1" max="12" step="0.5" value="6.5"></div>
         <div class="ic"><div class="il">포트폴리오 변동성(표준편차) <span class="iv" id="l-vol-s">12.0%</span></div><input type="range" id="vol-simple" min="1" max="25" step="0.5" value="12"></div>
       </div>
     </div>
     <div class="port-panel" id="port-panel-detail">
-      <div class="sn" style="margin-bottom:10px">실제 계좌를 보며 자산군별 비중·기대수익률·변동성을 입력하세요. 비중 합계 = 100%.</div>
+      <div class="sn" style="margin-bottom:9px">실제 계좌를 보며 자산군별로 입력하세요. 비중 합계 = 100%.</div>
       <div class="asset-header"><span>자산군</span><span>비중(%)</span><span>기대수익률(%)</span><span>변동성(%)</span></div>
       <div id="asset-rows"></div>
       <div class="err" id="err-port"></div>
-      <div style="margin-top:8px;font-size:12px;color:var(--text2)">자산군간 평균 상관계수 <span class="iv" id="l-corr">0.3</span></div>
-      <input type="range" id="corr" min="0" max="0.9" step="0.1" value="0.3" style="width:100%;margin-top:4px">
-      <div class="sn">0 = 완전 분산 / 0.5 = 보통 / 0.9 = 거의 동일 움직임. 한국 자산 편중이면 0.5~0.7 권장.</div>
+      <div style="margin-top:7px;font-size:12px;color:var(--text2)">자산군간 평균 상관계수 <span class="iv" id="l-corr">0.3</span></div>
+      <input type="range" id="corr" min="0" max="0.9" step="0.1" value="0.3" style="width:100%;margin-top:3px">
+      <div class="sn">0 = 완전 분산 / 0.5 = 보통 / 0.9 = 거의 동일 움직임</div>
     </div>
     <div class="port-result">
       <div class="pr-item"><div class="pr-label">포트폴리오 기대수익률</div><div class="pr-val" id="port-ret-out">—</div></div>
@@ -504,16 +267,16 @@
   <div class="pw" id="pw" style="grid-template-columns:1fr">
     <div class="pp"><span class="ls-badge bme">본인</span>
       <div class="ttabs"><div class="tb early" id="me-e-btn" onclick="setMode('me','early')">조기<br><span style="font-size:10px;font-weight:400">60~64세</span></div><div class="tb normal active" id="me-n-btn" onclick="setMode('me','normal')">정상<br><span style="font-size:10px;font-weight:400">65세</span></div><div class="tb defer" id="me-d-btn" onclick="setMode('me','defer')">연기<br><span style="font-size:10px;font-weight:400">66~70세</span></div></div>
-      <div id="me-ec" style="display:none;margin-bottom:7px"><div class="il" style="font-size:11px">조기수령 나이 <span class="iv" id="l-me-e">63세</span></div><input type="range" id="me-early" min="60" max="64" step="1" value="63"></div>
-      <div id="me-dc" style="display:none;margin-bottom:7px"><div class="il" style="font-size:11px">연기수령 나이 <span class="iv" id="l-me-d">67세</span></div><input type="range" id="me-defer" min="66" max="70" step="1" value="67"></div>
+      <div id="me-ec" style="display:none;margin-bottom:6px"><div class="il" style="font-size:11px">조기수령 나이 <span class="iv" id="l-me-e">63세</span></div><input type="range" id="me-early" min="60" max="64" step="1" value="63"></div>
+      <div id="me-dc" style="display:none;margin-bottom:6px"><div class="il" style="font-size:11px">연기수령 나이 <span class="iv" id="l-me-d">67세</span></div><input type="range" id="me-defer" min="66" max="70" step="1" value="67"></div>
       <div class="il">기준 연금액 (65세) <span class="iv" id="l-me-base">80만원</span></div><input type="range" id="me-base" min="0" max="300" step="5" value="80">
       <div class="pdg"><div class="pdi"><div class="pdi-l">수령 시작</div><div class="pdi-v" id="me-sa">65세</div><div class="pdi-s" id="me-ml">정상수령</div></div><div class="pdi"><div class="pdi-l">월 수령액</div><div class="pdi-v" id="me-amt">80만원</div><div class="pdi-s" id="me-adj">0%</div></div><div class="pdi"><div class="pdi-l">공백 기간</div><div class="pdi-v" id="me-gap">3년</div><div class="pdi-s">은퇴~연금 전</div></div><div class="pdi"><div class="pdi-l">손익분기</div><div class="pdi-v" id="me-be">—</div><div class="pdi-s" id="me-be-s">—</div></div></div>
       <div class="pn" id="me-notice"></div>
     </div>
     <div class="pp" id="pp-sp" style="display:none"><span class="ls-badge bsp">배우자</span>
       <div class="ttabs"><div class="tb early" id="sp-e-btn" onclick="setMode('sp','early')">조기<br><span style="font-size:10px;font-weight:400">60~64세</span></div><div class="tb normal active" id="sp-n-btn" onclick="setMode('sp','normal')">정상<br><span style="font-size:10px;font-weight:400">65세</span></div><div class="tb defer" id="sp-d-btn" onclick="setMode('sp','defer')">연기<br><span style="font-size:10px;font-weight:400">66~70세</span></div></div>
-      <div id="sp-ec" style="display:none;margin-bottom:7px"><div class="il" style="font-size:11px">조기수령 나이 <span class="iv" id="l-sp-e">63세</span></div><input type="range" id="sp-early" min="60" max="64" step="1" value="63"></div>
-      <div id="sp-dc" style="display:none;margin-bottom:7px"><div class="il" style="font-size:11px">연기수령 나이 <span class="iv" id="l-sp-d">67세</span></div><input type="range" id="sp-defer" min="66" max="70" step="1" value="67"></div>
+      <div id="sp-ec" style="display:none;margin-bottom:6px"><div class="il" style="font-size:11px">조기수령 나이 <span class="iv" id="l-sp-e">63세</span></div><input type="range" id="sp-early" min="60" max="64" step="1" value="63"></div>
+      <div id="sp-dc" style="display:none;margin-bottom:6px"><div class="il" style="font-size:11px">연기수령 나이 <span class="iv" id="l-sp-d">67세</span></div><input type="range" id="sp-defer" min="66" max="70" step="1" value="67"></div>
       <div class="il">기준 연금액 (65세) <span class="iv" id="l-sp-base">60만원</span></div><input type="range" id="sp-base" min="0" max="300" step="5" value="60">
       <div class="pdg"><div class="pdi"><div class="pdi-l">수령 시작</div><div class="pdi-v" id="sp-sa">65세</div><div class="pdi-s" id="sp-ml">정상수령</div></div><div class="pdi"><div class="pdi-l">월 수령액</div><div class="pdi-v" id="sp-amt">60만원</div><div class="pdi-s" id="sp-adj">0%</div></div><div class="pdi"><div class="pdi-l">공백 기간</div><div class="pdi-v" id="sp-gap">—</div><div class="pdi-s">배우자 은퇴~연금 전</div></div><div class="pdi"><div class="pdi-l">손익분기</div><div class="pdi-v" id="sp-be">—</div><div class="pdi-s" id="sp-be-s">—</div></div></div>
       <div class="pn" id="sp-notice"></div>
@@ -526,7 +289,7 @@
 <div class="phase" id="solo-pension-phase" style="display:none">
   <div class="pt">6 · 공적연금 — 독거 시나리오 별도 입력 (시나리오 B·C)</div>
   <div class="solo-pension-card">
-    <div class="sn" style="margin-bottom:12px">독거 이후 공적연금은 유족연금 수령 여부 등 개인 상황이 달라 계산기가 추정할 수 없습니다. <b>국민연금공단 홈페이지 → 내 연금 알아보기</b>에서 직접 확인 후 입력하세요.</div>
+    <div class="sn" style="margin-bottom:11px">독거 이후 공적연금은 유족연금 수령 여부 등 개인 상황이 달라 계산기가 추정할 수 없습니다. <b>국민연금공단 홈페이지 → 내 연금 알아보기</b>에서 직접 확인 후 입력하세요.</div>
     <div class="solo-pension-grid" id="solo-pension-grid">
       <div class="solo-col" style="border-color:#F5C4B3">
         <div class="solo-col-title"><span class="ls-badge bB">시나리오 B</span><span style="font-size:11px;color:var(--text2)">본인 사망 후 배우자가 받을 공적연금</span></div>
@@ -534,7 +297,7 @@
         <div class="pension-item-row"><span class="pension-item-label">유족연금 (본인→배우자)</span><input class="pension-item-input" type="number" id="b-pension-survivor" min="0" max="200" step="5" value="0"><span class="pension-item-unit">만원/월</span></div>
         <div class="pension-item-row"><span class="pension-item-label">기타 (개인연금 등)</span><input class="pension-item-input" type="number" id="b-pension-etc" min="0" max="200" step="5" value="0"><span class="pension-item-unit">만원/월</span></div>
         <div class="solo-total solo-total-b" id="b-pension-total">배우자 수령 합계: 60만원/월</div>
-        <div class="sn" style="margin-top:8px">유족연금과 배우자 본인 연금은 중복 수령 시 조정될 수 있습니다. 국민연금공단에 직접 확인하세요.</div>
+        <div class="sn" style="margin-top:7px">유족연금과 배우자 본인 연금은 중복 수령 시 조정될 수 있습니다.</div>
       </div>
       <div class="solo-col" style="border-color:#FAC775">
         <div class="solo-col-title"><span class="ls-badge bC">시나리오 C</span><span style="font-size:11px;color:var(--text2)">배우자 사망 후 본인이 받을 공적연금</span></div>
@@ -542,42 +305,79 @@
         <div class="pension-item-row"><span class="pension-item-label">유족연금 (배우자→본인)</span><input class="pension-item-input" type="number" id="c-pension-survivor" min="0" max="200" step="5" value="0"><span class="pension-item-unit">만원/월</span></div>
         <div class="pension-item-row"><span class="pension-item-label">기타 (개인연금 등)</span><input class="pension-item-input" type="number" id="c-pension-etc" min="0" max="200" step="5" value="0"><span class="pension-item-unit">만원/월</span></div>
         <div class="solo-total solo-total-c" id="c-pension-total">본인 수령 합계: 80만원/월</div>
-        <div class="sn" style="margin-top:8px">유족연금과 본인 연금은 중복 수령 시 조정될 수 있습니다. 국민연금공단에 직접 확인하세요.</div>
+        <div class="sn" style="margin-top:7px">유족연금과 본인 연금은 중복 수령 시 조정될 수 있습니다.</div>
       </div>
     </div>
   </div>
 </div>
 
-<!-- 7. 인생 단계 -->
+<!-- 7. 인생 단계별 생활비 -->
 <div class="phase">
   <div class="pt">7 · 인생 단계별 생활비 설계</div>
-  <div class="sn" style="margin-bottom:10px">각 단계를 ON/OFF하고 기간과 월 생활비를 입력하세요. 독거 단계는 시나리오 B·C에 자동 적용됩니다.</div>
+  <div class="sn" style="margin-bottom:9px">각 단계를 ON/OFF하고 기간과 월 생활비를 입력하세요. 부부 단계 합계는 <b>부부 은퇴 기간</b>을, 독거 단계 합계는 <b>독거 기간</b>을 초과할 수 없습니다.</div>
   <div class="stage-grid" id="stage-grid"></div>
-  <div class="err" id="err-stage" style="margin-top:8px"></div>
-  <div style="margin-top:10px;padding:10px 14px;background:var(--bg2);border-radius:var(--radius-lg);font-size:12px" id="stage-summary"></div>
+  <div class="err" id="err-stage" style="margin-top:7px"></div>
+  <div style="margin-top:9px;padding:9px 13px;background:var(--bg2);border-radius:var(--radius-lg);font-size:12px" id="stage-summary"></div>
 </div>
 
 <!-- 8. 이벤트 비용 -->
 <div class="phase">
-  <div class="pt">8 · 이벤트 비용 (목돈 지출)</div>
-  <div class="sn" style="margin-bottom:10px">본인 나이 기준 발생하는 목돈 지출을 현재 물가 기준으로 입력하세요. 물가상승률이 자동 반영됩니다.</div>
-  <div class="event-list" id="event-list"></div>
+  <div class="pt">8 · 이벤트 비용 (일시 목돈 지출)</div>
+  <div class="sn" style="margin-bottom:9px">본인 나이 기준 발생하는 목돈 지출을 현재 물가 기준으로 입력하세요. 물가상승률이 자동 반영됩니다.</div>
+  <div class="flow-list" id="event-list"></div>
   <button class="add-btn" onclick="addEvent()">+ 이벤트 추가</button>
-  <div style="font-size:12px;color:var(--text2);padding:6px 10px;background:var(--bg2);border-radius:var(--radius-md);margin-top:10px" id="event-total">이벤트 없음</div>
+  <div style="font-size:12px;color:var(--text2);padding:6px 10px;background:var(--bg2);border-radius:var(--radius);margin-top:9px" id="event-total">이벤트 없음</div>
 </div>
 
-<!-- 9. 기타 조건 -->
+<!-- 9. 현금흐름 수입 -->
 <div class="phase">
-  <div class="pt">9 · 기타 인출 조건</div>
+  <div class="pt">9 · 추가 현금흐름 수입 (주택연금·월세 등 정기 수입)</div>
+  <div class="sn" style="margin-bottom:9px">주택연금, 월세 수입 등 은퇴 후 정기적으로 들어오는 수입을 입력하세요. 인출 필요액에서 차감됩니다.</div>
+  <div class="flow-list" id="cashflow-list"></div>
+  <button class="add-btn" onclick="addCashflow()">+ 현금흐름 수입 추가</button>
+  <div style="font-size:12px;color:var(--text2);padding:6px 10px;background:var(--bg2);border-radius:var(--radius);margin-top:9px" id="cashflow-total">현금흐름 수입 없음</div>
+</div>
+
+<!-- 10. 정액 수령 연금 -->
+<div class="phase">
+  <div class="pt">10 · 정액 수령 연금 (보험사 연금 등 고정 인출)</div>
+  <div class="sn" style="margin-bottom:9px">보험사 연금처럼 매달 고정 금액이 지급되는 상품을 입력하세요. 지급 기간 동안 인출 필요액에서 차감됩니다. (물가 연동 없음)</div>
+  <div class="flow-list" id="fixedpension-list"></div>
+  <button class="add-btn" onclick="addFixedPension()">+ 정액 연금 추가</button>
+  <div style="font-size:12px;color:var(--text2);padding:6px 10px;background:var(--bg2);border-radius:var(--radius);margin-top:9px" id="fixedpension-total">정액 연금 없음</div>
+</div>
+
+<!-- 11. 기타 조건 -->
+<div class="phase">
+  <div class="pt">11 · 기타 인출 조건</div>
   <div class="g2">
-    <div class="ic"><div class="il">현금 버퍼 기간 <span class="iv" id="l-buffer">4년</span></div><input type="range" id="buffer" min="1" max="8" step="1" value="4"></div>
+    <div class="ic">
+      <div class="il">현금 버퍼 기간 <span class="iv" id="l-buffer">4년</span></div>
+      <input type="range" id="buffer" min="1" max="8" step="1" value="4">
+      <div class="sn" style="margin-top:6px">각 단계의 실제 인출 필요액 기준으로 단계별 버퍼가 계산됩니다.</div>
+    </div>
     <div class="ic"><div class="il">물가상승률 <span class="iv" id="l-infl">3.0%</span></div><input type="range" id="infl" min="1" max="6" step="0.5" value="3"></div>
     <div class="ic"><div class="il">상속 목표 <span class="iv" id="l-inherit">0억원</span></div><input type="range" id="inherit" min="0" max="10" step="0.5" value="0"></div>
+  </div>
+  <!-- 단계별 버퍼 상세 -->
+  <div style="margin-top:12px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-lg);padding:13px 15px" id="buf-detail-wrap">
+    <div style="font-size:13px;font-weight:600;margin-bottom:10px">단계별 현금 버퍼 계산</div>
+    <div style="overflow-x:auto">
+      <table class="cf-table" id="buf-table">
+        <thead><tr><th>단계</th><th>월 생활비</th><th>공적연금·수입 차감</th><th>월 인출 필요액</th><th>버퍼 기간</th><th>필요 버퍼</th><th></th></tr></thead>
+        <tbody id="buf-body"></tbody>
+      </table>
+    </div>
+    <div style="margin-top:10px;display:flex;align-items:baseline;gap:16px;flex-wrap:wrap">
+      <div style="font-size:12px;color:var(--text2)">단계별 최대 버퍼 <span style="font-size:16px;font-weight:700;color:var(--text)" id="buf-max">—</span></div>
+      <div style="font-size:12px;color:var(--text2)">→ 투자 가능 자산 = 은퇴 시점 자산 − 최대 버퍼</div>
+    </div>
+    <div class="sn" style="margin-top:8px">가장 인출 부담이 큰 단계의 버퍼를 보유하면 모든 단계에서 하락장을 버틸 수 있습니다.</div>
   </div>
 </div>
 
 <div class="divider"></div>
-<div class="pt" style="margin-bottom:14px">결과 — 시나리오 선택</div>
+<div class="pt" style="margin-bottom:13px">결과 — 시나리오 선택</div>
 
 <div class="sc-tabs">
   <button class="sc-btn act-a" id="tab-a" onclick="switchTab('a')">A — 부부 함께<br><span style="font-size:11px;font-weight:400">기준 시나리오</span><span class="stag tag-a">기준</span><br><span style="font-size:11px;opacity:.7" id="tab-a-p">—</span></button>
@@ -587,7 +387,7 @@
 
 <!-- 패널 A -->
 <div class="rp active" id="panel-a">
-  <div class="sh sh-a"><b>시나리오 A — 부부 함께 생존</b><br><span id="sh-a-desc" style="color:#185FA5;font-size:12px">—</span></div>
+  <div class="sh sh-a"><b>시나리오 A — 부부/동반 함께 생존</b><br><span id="sh-a-desc" style="color:#185FA5;font-size:12px">—</span></div>
   <div class="rb">
     <div class="met"><div class="ml">은퇴 시점 예상 자산</div><div class="mv" id="a-asset">—</div><div class="ms" id="a-asset-s">—</div></div>
     <div class="met"><div class="ml">1년차 인출률</div><div class="mv" id="a-rate">—</div><div class="ms" id="a-rate-s">—</div></div>
@@ -597,13 +397,13 @@
     <div class="met"><div class="ml">자산 부족/여유</div><div class="mv" id="a-gap">—</div><div class="ms" id="a-gap-s">—</div></div>
   </div>
   <div class="cc">
-    <div style="font-size:13px;font-weight:600;margin-bottom:10px">단계별 현금흐름 요약 — 시나리오 A</div>
-    <div style="overflow-x:auto"><table class="cf-table"><thead><tr><th>단계</th><th>기간</th><th>나이</th><th>월 생활비</th><th>공적연금(합산)</th><th>월 인출 필요</th></tr></thead><tbody id="cf-body-a"></tbody></table></div>
+    <div style="font-size:13px;font-weight:600;margin-bottom:9px">단계별 현금흐름 요약 — 시나리오 A</div>
+    <div style="overflow-x:auto"><table class="cf-table"><thead><tr><th>단계</th><th>기간</th><th>나이</th><th>월 생활비</th><th>공적연금·수입</th><th>월 인출 필요</th></tr></thead><tbody id="cf-body-a"></tbody></table></div>
   </div>
   <div class="cc">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:11px;flex-wrap:wrap;gap:8px"><span style="font-size:13px;font-weight:600">연도별 자산 — 시나리오 A</span><div class="leg"><div class="li"><div class="ld" style="background:#1D9E75"></div>낙관</div><div class="li"><div class="ld" style="background:#378ADD"></div>기본</div><div class="li"><div class="ld" style="background:#D85A30"></div>비관</div></div></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:7px"><span style="font-size:13px;font-weight:600">연도별 자산 — 시나리오 A</span><div class="leg"><div class="li"><div class="ld" style="background:#1D9E75"></div>낙관</div><div class="li"><div class="ld" style="background:#378ADD"></div>기본</div><div class="li"><div class="ld" style="background:#D85A30"></div>비관</div></div></div>
     <div style="position:relative;width:100%;height:240px"><canvas id="chart-a" role="img" aria-label="시나리오A 자산 잔액"></canvas></div>
-    <div style="font-size:11px;color:var(--text3);margin-top:7px" id="note-a"></div>
+    <div style="font-size:11px;color:var(--text3);margin-top:6px" id="note-a"></div>
   </div>
   <div class="adv" id="adv-a"></div>
 </div>
@@ -611,10 +411,14 @@
 <!-- 패널 B -->
 <div class="rp" id="panel-b">
   <div class="sh sh-b"><b>시나리오 B — 본인 먼저 사망 → 배우자 홀로</b><br><span id="sh-b-desc" style="color:#993C1D;font-size:12px">—</span></div>
-  <div class="ic" style="margin-bottom:12px"><div class="il">본인 사망 예상 시점 <span class="iv" id="l-me-death">은퇴 후 15년</span></div><input type="range" id="me-death" min="1" max="44" step="1" value="15"><div class="sn" id="me-death-sn">—</div></div>
-  <div style="padding:10px 14px;background:#FAECE7;border-radius:var(--radius-lg);margin-bottom:12px;font-size:12px;color:#993C1D">
+  <div class="ic" style="margin-bottom:11px">
+    <div class="il">본인 사망 시점 (독립 조절) <span class="iv" id="l-me-death">은퇴 후 15년</span></div>
+    <input type="range" id="me-death" min="1" max="64" step="1" value="15">
+    <div class="sn" id="me-death-sn">—</div>
+  </div>
+  <div style="padding:9px 13px;background:#FAECE7;border-radius:var(--radius-lg);margin-bottom:11px;font-size:12px;color:#993C1D">
     <b>배우자 수령 공적연금 (섹션 6 입력값)</b> — 합계 <span id="b-pension-preview" style="font-weight:700">—</span>/월
-    <div style="font-size:11px;margin-top:4px;color:#7A3020" id="b-pension-breakdown">—</div>
+    <div style="font-size:11px;margin-top:3px;color:#7A3020" id="b-pension-breakdown">—</div>
   </div>
   <div class="rb">
     <div class="met"><div class="ml">본인 사망 시 잔여 자산</div><div class="mv" id="b-asset">—</div><div class="ms" id="b-asset-s">—</div></div>
@@ -625,13 +429,13 @@
     <div class="met"><div class="ml">필요 추가 보장</div><div class="mv" id="b-gap">—</div><div class="ms" id="b-gap-s">—</div></div>
   </div>
   <div class="cc">
-    <div style="font-size:13px;font-weight:600;margin-bottom:10px">단계별 현금흐름 — 시나리오 B (배우자 홀로)</div>
+    <div style="font-size:13px;font-weight:600;margin-bottom:9px">단계별 현금흐름 — 시나리오 B (배우자 홀로)</div>
     <div style="overflow-x:auto"><table class="cf-table"><thead><tr><th>단계</th><th>기간</th><th>나이(배우자)</th><th>월 생활비</th><th>배우자 공적연금</th><th>월 인출 필요</th></tr></thead><tbody id="cf-body-b"></tbody></table></div>
   </div>
   <div class="cc">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:11px;flex-wrap:wrap;gap:8px"><span style="font-size:13px;font-weight:600">배우자 홀로 자산 — 시나리오 B</span><div class="leg"><div class="li"><div class="ld" style="background:#1D9E75"></div>낙관</div><div class="li"><div class="ld" style="background:#BA7517"></div>기본</div><div class="li"><div class="ld" style="background:#D85A30"></div>비관</div></div></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:7px"><span style="font-size:13px;font-weight:600">배우자 홀로 자산 — 시나리오 B</span><div class="leg"><div class="li"><div class="ld" style="background:#1D9E75"></div>낙관</div><div class="li"><div class="ld" style="background:#BA7517"></div>기본</div><div class="li"><div class="ld" style="background:#D85A30"></div>비관</div></div></div>
     <div style="position:relative;width:100%;height:240px"><canvas id="chart-b" role="img" aria-label="시나리오B 자산 잔액"></canvas></div>
-    <div style="font-size:11px;color:var(--text3);margin-top:7px" id="note-b"></div>
+    <div style="font-size:11px;color:var(--text3);margin-top:6px" id="note-b"></div>
   </div>
   <div class="adv" id="adv-b"></div>
 </div>
@@ -639,10 +443,14 @@
 <!-- 패널 C -->
 <div class="rp" id="panel-c">
   <div class="sh sh-c"><b>시나리오 C — 배우자 먼저 사망 → 본인 홀로</b><br><span id="sh-c-desc" style="color:#7A5800;font-size:12px">—</span></div>
-  <div class="ic" style="margin-bottom:12px"><div class="il">배우자 사망 예상 시점 <span class="iv" id="l-sp-death">은퇴 후 10년</span></div><input type="range" id="sp-death" min="1" max="44" step="1" value="10"><div class="sn" id="sp-death-sn">—</div></div>
-  <div style="padding:10px 14px;background:#FFF3CD;border-radius:var(--radius-lg);margin-bottom:12px;font-size:12px;color:#7A5800">
+  <div class="ic" style="margin-bottom:11px">
+    <div class="il">배우자 사망 시점 (독립 조절) <span class="iv" id="l-sp-death">은퇴 후 10년</span></div>
+    <input type="range" id="sp-death" min="1" max="64" step="1" value="10">
+    <div class="sn" id="sp-death-sn">—</div>
+  </div>
+  <div style="padding:9px 13px;background:#FFF3CD;border-radius:var(--radius-lg);margin-bottom:11px;font-size:12px;color:#7A5800">
     <b>본인 수령 공적연금 (섹션 6 입력값)</b> — 합계 <span id="c-pension-preview" style="font-weight:700">—</span>/월
-    <div style="font-size:11px;margin-top:4px;color:#5C4000" id="c-pension-breakdown">—</div>
+    <div style="font-size:11px;margin-top:3px;color:#5C4000" id="c-pension-breakdown">—</div>
   </div>
   <div class="rb">
     <div class="met"><div class="ml">배우자 사망 시 잔여 자산</div><div class="mv" id="c-asset">—</div><div class="ms" id="c-asset-s">—</div></div>
@@ -653,19 +461,19 @@
     <div class="met"><div class="ml">필요 추가 보장</div><div class="mv" id="c-gap">—</div><div class="ms" id="c-gap-s">—</div></div>
   </div>
   <div class="cc">
-    <div style="font-size:13px;font-weight:600;margin-bottom:10px">단계별 현금흐름 — 시나리오 C (본인 홀로)</div>
+    <div style="font-size:13px;font-weight:600;margin-bottom:9px">단계별 현금흐름 — 시나리오 C (본인 홀로)</div>
     <div style="overflow-x:auto"><table class="cf-table"><thead><tr><th>단계</th><th>기간</th><th>나이(본인)</th><th>월 생활비</th><th>본인 공적연금</th><th>월 인출 필요</th></tr></thead><tbody id="cf-body-c"></tbody></table></div>
   </div>
   <div class="cc">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:11px;flex-wrap:wrap;gap:8px"><span style="font-size:13px;font-weight:600">본인 홀로 자산 — 시나리오 C</span><div class="leg"><div class="li"><div class="ld" style="background:#1D9E75"></div>낙관</div><div class="li"><div class="ld" style="background:#BA7517"></div>기본</div><div class="li"><div class="ld" style="background:#D85A30"></div>비관</div></div></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:7px"><span style="font-size:13px;font-weight:600">본인 홀로 자산 — 시나리오 C</span><div class="leg"><div class="li"><div class="ld" style="background:#1D9E75"></div>낙관</div><div class="li"><div class="ld" style="background:#BA7517"></div>기본</div><div class="li"><div class="ld" style="background:#D85A30"></div>비관</div></div></div>
     <div style="position:relative;width:100%;height:240px"><canvas id="chart-c" role="img" aria-label="시나리오C 자산 잔액"></canvas></div>
-    <div style="font-size:11px;color:var(--text3);margin-top:7px" id="note-c"></div>
+    <div style="font-size:11px;color:var(--text3);margin-top:6px" id="note-c"></div>
   </div>
   <div class="adv" id="adv-c"></div>
 </div>
 
 <div class="cmp3" id="cmp3">
-  <div class="cmp3-col"><div class="cmp3-ttl">A — 부부 함께</div><div class="cmp3-row"><span class="cmp3-lbl">생존 확률</span><span class="cmp3-val" id="cmp-a-p">—</span></div><div class="cmp3-row"><span class="cmp3-lbl">인출률</span><span class="cmp3-val" id="cmp-a-r">—</span></div><div class="cmp3-period" id="cmp-a-period">—</div></div>
+  <div class="cmp3-col"><div class="cmp3-ttl">A — 부부/동반 함께</div><div class="cmp3-row"><span class="cmp3-lbl">생존 확률</span><span class="cmp3-val" id="cmp-a-p">—</span></div><div class="cmp3-row"><span class="cmp3-lbl">인출률</span><span class="cmp3-val" id="cmp-a-r">—</span></div><div class="cmp3-period" id="cmp-a-period">—</div></div>
   <div class="cmp3-sep"></div>
   <div class="cmp3-col"><div class="cmp3-ttl">B — 배우자 홀로</div><div class="cmp3-row"><span class="cmp3-lbl">생존 확률</span><span class="cmp3-val" id="cmp-b-p">—</span></div><div class="cmp3-row"><span class="cmp3-lbl">인출률</span><span class="cmp3-val" id="cmp-b-r">—</span></div><div class="cmp3-period" id="cmp-b-period">—</div></div>
   <div class="cmp3-sep"></div>
@@ -677,68 +485,281 @@
   ⚠️ 본 계산기는 교육 목적의 참고자료입니다. 실제 재무 의사결정은 반드시 공인 재무설계사(CFP)와 상담하세요.<br>
   정원준 CFP · 서울리(Re)테크 · 몬테카를로 시뮬레이션 1,200회 기반
 </div>
-
-</div><!-- /container -->
+</div>
 
 <script>
 const $=id=>document.getElementById(id);
 let cA=null,cB=null,cC=null;
 let hasSp=false,meMode='normal',spMode='normal',portMode='simple';
-let eventId=0,events=[];
+let eventId=0,cashflowId=0,fixedPensionId=0;
+let events=[],cashflows=[],fixedPensions=[];
 
+// ── 인생 단계 정의 (4,5번 수정 반영)
 const STAGES=[
-  {id:'gap_couple',label:'부부 소득공백기',color:'#D85A30',bg:'#FAECE7',tc:'#993C1D',desc:'두 사람 모두 소득 없는 기간',defaultYrs:3,defaultMon:350,solo:false},
-  {id:'gap_me',label:'본인 소득공백기',color:'#E74C3C',bg:'#FDEDEC',tc:'#A93226',desc:'본인만 소득 없는 기간 (배우자 재직 중)',defaultYrs:2,defaultMon:280,solo:false},
-  {id:'active',label:'부부 활동기',color:'#378ADD',bg:'#EBF3FF',tc:'#185FA5',desc:'건강하게 활발히 활동하는 시기',defaultYrs:10,defaultMon:300,solo:false},
-  {id:'recall',label:'부부 회상기',color:'#8B5CF6',bg:'#F3EFFE',tc:'#5B21B6',desc:'활동이 줄고 집에서 보내는 시간이 늘어나는 시기',defaultYrs:8,defaultMon:240,solo:false},
-  {id:'care',label:'부부 간병기',color:'#BA7517',bg:'#FFF3CD',tc:'#7A5800',desc:'의료·간병 비용 증가 시기',defaultYrs:5,defaultMon:320,solo:false},
-  {id:'solo_active',label:'독거 활동기',color:'#1D9E75',bg:'#E1F5EE',tc:'#0F6E56',desc:'배우자/본인 사망 후 홀로 활동하는 시기',defaultYrs:8,defaultMon:200,solo:true},
-  {id:'solo_care',label:'독거 간병기',color:'#5F5E5A',bg:'#F1EFE8',tc:'#2C2C2A',desc:'홀로 남아 의료·간병 비용이 발생하는 말년',defaultYrs:5,defaultMon:250,solo:true},
+  {id:'gap_me',    label:'본인 소득공백기',   color:'#E74C3C',bg:'#FDEDEC',tc:'#A93226',desc:'본인 은퇴 후 공적연금 수령 전 공백',defaultYrs:3,defaultMon:280,solo:false,autoCalc:true,who:'me'},
+  {id:'gap_sp',    label:'배우자 소득공백기', color:'#D85A30',bg:'#FAECE7',tc:'#993C1D',desc:'배우자 은퇴 후 공적연금 수령 전 공백',defaultYrs:5,defaultMon:280,solo:false,autoCalc:true,who:'sp'},
+  {id:'active',    label:'활동기',            color:'#378ADD',bg:'#EBF3FF',tc:'#185FA5',desc:'건강하게 활발히 활동하는 시기',defaultYrs:10,defaultMon:300,solo:false,autoCalc:false,who:null},
+  {id:'recall',    label:'회상기',            color:'#8B5CF6',bg:'#F3EFFE',tc:'#5B21B6',desc:'활동이 줄고 집에서 보내는 시간이 늘어나는 시기',defaultYrs:8,defaultMon:240,solo:false,autoCalc:false,who:null},
+  {id:'care',      label:'간병기',            color:'#BA7517',bg:'#FFF3CD',tc:'#7A5800',desc:'의료·간병 비용 증가 시기',defaultYrs:5,defaultMon:320,solo:false,autoCalc:false,who:null},
+  {id:'solo_active',label:'독거 활동기',      color:'#1D9E75',bg:'#E1F5EE',tc:'#0F6E56',desc:'홀로 남아 활동하는 시기',defaultYrs:8,defaultMon:200,solo:true,autoCalc:false,who:null},
+  {id:'solo_care', label:'독거 간병기',       color:'#5F5E5A',bg:'#F1EFE8',tc:'#2C2C2A',desc:'홀로 남아 의료·간병 비용 발생 시기',defaultYrs:5,defaultMon:250,solo:true,autoCalc:false,who:null},
 ];
 let stageState={};
-STAGES.forEach(s=>{stageState[s.id]={on:['active','recall'].includes(s.id),yrs:s.defaultYrs,mon:s.defaultMon};});
+STAGES.forEach(s=>{
+  // 소득공백기는 기본값 ON, 나머지는 기존대로
+  const defaultOn = ['active','recall','gap_me','gap_sp'].includes(s.id);
+  stageState[s.id]={on:defaultOn,yrs:s.defaultYrs,mon:s.defaultMon,manualOverride:false};
+});
+
+// 소득공백기 자동 계산
+function calcGapYears(who){
+  const retAge=who==='me'?+$('retire').value:+$('sp-retire').value;
+  const pensionAge=who==='me'?getPensionStartAge('me'):getPensionStartAge('sp');
+  return Math.max(0, pensionAge-retAge);
+}
+function getPensionStartAge(who){
+  const mode=who==='me'?meMode:spMode;
+  if(mode==='early') return +$(who==='me'?'me-early':'sp-early').value;
+  if(mode==='defer') return +$(who==='me'?'me-defer':'sp-defer').value;
+  return 65;
+}
 
 function buildStageGrid(){
   const grid=$('stage-grid');grid.innerHTML='';
   STAGES.forEach(s=>{
     const st=stageState[s.id];
     const row=document.createElement('div');row.className='stage-row';
-    row.innerHTML=`<div class="stage-header"><span class="stage-badge" style="background:${s.bg};color:${s.tc}">${s.label}</span><span style="font-size:11px;color:var(--text2)">${s.desc}</span><div class="stage-toggle" onclick="toggleStage('${s.id}')"><div class="mini-tr ${st.on?'on':''}" id="str-${s.id}"><div class="mini-th"></div></div><span id="stlbl-${s.id}">${st.on?'ON':'OFF'}</span></div></div><div class="stage-body ${st.on?'open':''}" id="sbody-${s.id}"><div class="stage-inputs"><div class="ic"><div class="il">기간 <span class="iv" id="styr-lbl-${s.id}">${st.yrs}년</span></div><input type="range" id="styr-${s.id}" min="1" max="20" step="1" value="${st.yrs}" oninput="stageInput('${s.id}','yrs',this.value)"></div><div class="ic"><div class="il">월 생활비 <span class="iv" id="stmon-lbl-${s.id}">${st.mon}만원</span></div><input type="range" id="stmon-${s.id}" min="50" max="600" step="10" value="${st.mon}" oninput="stageInput('${s.id}','mon',this.value)"></div></div></div>`;
+    const autoNote=s.autoCalc?`<span style="font-size:10px;color:var(--text3);margin-left:4px">(공적연금 수령 시기 자동 연동)</span>`:'';
+    row.innerHTML=`
+      <div class="stage-header">
+        <span class="stage-badge" style="background:${s.bg};color:${s.tc}">${s.label}</span>
+        ${autoNote}
+        <span style="font-size:11px;color:var(--text2)">${s.desc}</span>
+        <div class="stage-toggle" onclick="toggleStage('${s.id}')">
+          <div class="mini-tr ${st.on?'on':''}" id="str-${s.id}"><div class="mini-th"></div></div>
+          <span id="stlbl-${s.id}">${st.on?'ON':'OFF'}</span>
+        </div>
+      </div>
+      <div class="stage-body ${st.on?'open':''}" id="sbody-${s.id}">
+        <div class="stage-inputs">
+          <div class="ic">
+            <div class="il">기간 <span class="iv" id="styr-lbl-${s.id}">${st.yrs}년</span>${s.autoCalc?`<span id="styr-auto-${s.id}" style="font-size:10px;color:var(--blue);margin-left:4px"></span>`:''}</div>
+            <input type="range" id="styr-${s.id}" min="0" max="65" step="1" value="${st.yrs}" oninput="stageYrInput('${s.id}',this.value)">
+          </div>
+          <div class="ic">
+            <div class="il">월 생활비 <span class="iv" id="stmon-lbl-${s.id}">${st.mon}만원</span></div>
+            <input type="range" id="stmon-${s.id}" min="50" max="600" step="10" value="${st.mon}" oninput="stageMonInput('${s.id}',this.value)">
+          </div>
+        </div>
+      </div>`;
     grid.appendChild(row);
   });
 }
-function toggleStage(id){stageState[id].on=!stageState[id].on;const on=stageState[id].on;$('str-'+id).classList.toggle('on',on);$('stlbl-'+id).textContent=on?'ON':'OFF';$('sbody-'+id).classList.toggle('open',on);update();}
-function stageInput(id,field,val){stageState[id][field]=+val;if(field==='yrs')$('styr-lbl-'+id).textContent=val+'년';if(field==='mon')$('stmon-lbl-'+id).textContent=val+'만원';update();}
 
+function toggleStage(id){
+  stageState[id].on=!stageState[id].on;
+  const on=stageState[id].on;
+  $('str-'+id).classList.toggle('on',on);
+  $('stlbl-'+id).textContent=on?'ON':'OFF';
+  $('sbody-'+id).classList.toggle('open',on);
+  update();
+}
+function stageYrInput(id,val){
+  stageState[id].yrs=+val;
+  stageState[id].manualOverride=true;
+  $('styr-lbl-'+id).textContent=val+'년';
+  const autoEl=$('styr-auto-'+id);
+  if(autoEl) autoEl.textContent='(수동 조정)';
+  update();
+}
+function stageMonInput(id,val){stageState[id].mon=+val;$('stmon-lbl-'+id).textContent=val+'만원';update();}
+
+// 소득공백기 자동 연동 업데이트
+function syncGapYears(){
+  ['me','sp'].forEach(who=>{
+    const sid=who==='me'?'gap_me':'gap_sp';
+    if(who==='sp'&&!hasSp) return; // 배우자 없으면 스킵
+    if(stageState[sid].manualOverride) return; // 수동 수정한 경우 자동 연동 안 함
+    const autoYrs=calcGapYears(who);
+    stageState[sid].yrs=autoYrs;
+    // 공백 기간이 0이면 자동 OFF, 1 이상이면 자동 ON
+    stageState[sid].on = autoYrs > 0;
+    // UI 업데이트
+    const trEl=$('str-'+sid);
+    const lblEl=$('stlbl-'+sid);
+    const bodyEl=$('sbody-'+sid);
+    const sliderEl=$('styr-'+sid);
+    const sliderLblEl=$('styr-lbl-'+sid);
+    const autoEl=$('styr-auto-'+sid);
+    if(trEl) trEl.classList.toggle('on', stageState[sid].on);
+    if(lblEl) lblEl.textContent=stageState[sid].on?'ON':'OFF';
+    if(bodyEl) bodyEl.classList.toggle('open', stageState[sid].on);
+    if(sliderEl) sliderEl.value=autoYrs;
+    if(sliderLblEl) sliderLblEl.textContent=autoYrs+'년';
+    if(autoEl) autoEl.textContent=autoYrs>0?`(자동: ${autoYrs}년)`:'(공백 없음)';
+  });
+}
+
+// 단계 기간 제한 (5번 수정)
+function clampStageYears(retireAge,meLife,spLife,meDeathY,spDeathY){
+  const mePeriod=Math.max(1,meLife-retireAge);
+  const spLifeFromRet=hasSp?spLife-retireAge:0;
+  const periodA=hasSp?Math.max(mePeriod,spLifeFromRet):mePeriod;
+  const periodB=hasSp?Math.max(1,spLife-retireAge-meDeathY):0;
+  const periodC=Math.max(1,meLife-retireAge-spDeathY);
+  const soloPeriod=hasSp?Math.max(periodB,periodC):periodC;
+
+  // 부부 단계 합계 제한
+  const coupleStages=STAGES.filter(s=>!s.solo&&stageState[s.id].on);
+  let coupleTotal=coupleStages.reduce((sum,s)=>sum+stageState[s.id].yrs,0);
+  if(coupleTotal>periodA){
+    // 초과분을 마지막 단계에서 깎음
+    let excess=coupleTotal-periodA;
+    for(let i=coupleStages.length-1;i>=0&&excess>0;i--){
+      const s=coupleStages[i];
+      const cut=Math.min(stageState[s.id].yrs,excess);
+      stageState[s.id].yrs-=cut;
+      excess-=cut;
+      const el=$('styr-'+s.id);if(el)el.value=stageState[s.id].yrs;
+      const lbl=$('styr-lbl-'+s.id);if(lbl)lbl.textContent=stageState[s.id].yrs+'년';
+    }
+  }
+  // 독거 단계 합계 제한
+  const soloStages=STAGES.filter(s=>s.solo&&stageState[s.id].on);
+  let soloTotal=soloStages.reduce((sum,s)=>sum+stageState[s.id].yrs,0);
+  if(soloTotal>soloPeriod&&soloPeriod>0){
+    let excess=soloTotal-soloPeriod;
+    for(let i=soloStages.length-1;i>=0&&excess>0;i--){
+      const s=soloStages[i];
+      const cut=Math.min(stageState[s.id].yrs,excess);
+      stageState[s.id].yrs-=cut;
+      excess-=cut;
+      const el=$('styr-'+s.id);if(el)el.value=stageState[s.id].yrs;
+      const lbl=$('styr-lbl-'+s.id);if(lbl)lbl.textContent=stageState[s.id].yrs+'년';
+    }
+  }
+  return{periodA,soloPeriod};
+}
+
+// ── 이벤트
+function addEvent(){const id=++eventId;events.push({id,label:'자녀 독립자금',age:65,amt:3000});renderEvents();update();}
+function removeEvent(id){events=events.filter(e=>e.id!==id);renderEvents();update();}
+function renderEvents(){
+  const list=$('event-list');list.innerHTML='';
+  if(!events.length){list.innerHTML='<div style="font-size:12px;color:var(--text3);padding:6px 0">이벤트 없음</div>';return;}
+  events.forEach(e=>{
+    const row=document.createElement('div');row.className='flow-item';
+    row.innerHTML=`<div class="flow-grid flow-grid-3">
+      <div><div class="flow-label">이벤트 이름</div><input class="flow-input" type="text" value="${e.label}" oninput="evU(${e.id},'label',this.value)"></div>
+      <div><div class="flow-label">본인 나이 (발생 시점)</div><input class="flow-input" type="number" min="40" max="105" value="${e.age}" oninput="evU(${e.id},'age',+this.value)"></div>
+      <div><div class="flow-label">금액 (현재 물가, 만원)</div><input class="flow-input" type="number" min="100" max="500000" step="100" value="${e.amt}" oninput="evU(${e.id},'amt',+this.value)"></div>
+      <button class="del-btn" onclick="removeEvent(${e.id})">×</button>
+    </div>`;
+    list.appendChild(row);
+  });
+}
+function evU(id,f,v){const e=events.find(x=>x.id===id);if(e){e[f]=v;update();}}
+
+// ── 현금흐름 수입 (9번)
+function addCashflow(){
+  const id=++cashflowId;
+  cashflows.push({id,label:'주택연금',startAge:65,endAge:0,amt:80});
+  renderCashflows();update();
+}
+function removeCashflow(id){cashflows=cashflows.filter(e=>e.id!==id);renderCashflows();update();}
+function renderCashflows(){
+  const list=$('cashflow-list');list.innerHTML='';
+  if(!cashflows.length){list.innerHTML='<div style="font-size:12px;color:var(--text3);padding:6px 0">현금흐름 수입 없음</div>';return;}
+  cashflows.forEach(e=>{
+    const row=document.createElement('div');row.className='flow-item';
+    row.innerHTML=`<div class="flow-grid flow-grid-4">
+      <div><div class="flow-label">수입 이름</div><input class="flow-input" type="text" value="${e.label}" oninput="cfU(${e.id},'label',this.value)"></div>
+      <div><div class="flow-label">시작 나이</div><input class="flow-input" type="number" min="40" max="105" value="${e.startAge}" oninput="cfU(${e.id},'startAge',+this.value)"></div>
+      <div><div class="flow-label">종료 나이 (0=사망까지)</div><input class="flow-input" type="number" min="0" max="105" value="${e.endAge}" oninput="cfU(${e.id},'endAge',+this.value)"></div>
+      <div><div class="flow-label">월 수입 (만원)</div><input class="flow-input" type="number" min="1" max="5000" value="${e.amt}" oninput="cfU(${e.id},'amt',+this.value)"></div>
+      <button class="del-btn" onclick="removeCashflow(${e.id})">×</button>
+    </div>
+    <div class="sn" style="margin-top:6px">종료 나이 0 입력 시 사망까지 지속. 물가 연동으로 실질 가치 유지.</div>`;
+    list.appendChild(row);
+  });
+}
+function cfU(id,f,v){const e=cashflows.find(x=>x.id===id);if(e){e[f]=v;update();}}
+
+// ── 정액 연금 (10번)
+function addFixedPension(){
+  const id=++fixedPensionId;
+  fixedPensions.push({id,label:'보험사 연금',startAge:65,endAge:85,amt:50});
+  renderFixedPensions();update();
+}
+function removeFixedPension(id){fixedPensions=fixedPensions.filter(e=>e.id!==id);renderFixedPensions();update();}
+function renderFixedPensions(){
+  const list=$('fixedpension-list');list.innerHTML='';
+  if(!fixedPensions.length){list.innerHTML='<div style="font-size:12px;color:var(--text3);padding:6px 0">정액 연금 없음</div>';return;}
+  fixedPensions.forEach(e=>{
+    const row=document.createElement('div');row.className='flow-item';
+    row.innerHTML=`<div class="flow-grid flow-grid-4">
+      <div><div class="flow-label">연금 이름</div><input class="flow-input" type="text" value="${e.label}" oninput="fpU(${e.id},'label',this.value)"></div>
+      <div><div class="flow-label">수령 시작 나이</div><input class="flow-input" type="number" min="40" max="105" value="${e.startAge}" oninput="fpU(${e.id},'startAge',+this.value)"></div>
+      <div><div class="flow-label">수령 종료 나이 (0=사망까지)</div><input class="flow-input" type="number" min="0" max="105" value="${e.endAge}" oninput="fpU(${e.id},'endAge',+this.value)"></div>
+      <div><div class="flow-label">월 수령액 (만원, 정액 고정)</div><input class="flow-input" type="number" min="1" max="5000" value="${e.amt}" oninput="fpU(${e.id},'amt',+this.value)"></div>
+      <button class="del-btn" onclick="removeFixedPension(${e.id})">×</button>
+    </div>
+    <div class="sn" style="margin-top:6px">정액 연금은 물가 연동 없이 명목 금액 그대로 지급됩니다. 인출 필요액에서 차감됩니다.</div>`;
+    list.appendChild(row);
+  });
+}
+function fpU(id,f,v){const e=fixedPensions.find(x=>x.id===id);if(e){e[f]=v;update();}}
+
+// 현금흐름·정액연금 연도별 월 수입액 계산
+function getExtraIncome(yearIdx, retireAge){
+  const ageAtY=retireAge+yearIdx;
+  let total=0;
+  // 물가연동 현금흐름
+  cashflows.forEach(cf=>{
+    const end=cf.endAge>0?cf.endAge:200;
+    if(ageAtY>=cf.startAge&&ageAtY<end) total+=cf.amt;
+  });
+  // 정액 연금 (물가연동 없음 — 별도 처리: 여기선 명목 그대로)
+  fixedPensions.forEach(fp=>{
+    const end=fp.endAge>0?fp.endAge:200;
+    if(ageAtY>=fp.startAge&&ageAtY<end) total+=fp.amt;
+  });
+  return total;
+}
+
+// ── 포트폴리오
 const ASSET_DEFAULTS=[{name:'국내주식',ret:7.0,vol:18.0,wt:15},{name:'해외주식',ret:9.0,vol:16.0,wt:25},{name:'국내채권',ret:3.5,vol:4.0,wt:20},{name:'해외채권',ret:4.5,vol:6.0,wt:15},{name:'대안투자',ret:5.5,vol:8.0,wt:10},{name:'현금·단기',ret:2.5,vol:0.5,wt:15}];
 let assetRows=[...ASSET_DEFAULTS.map(a=>({...a}))];
-function buildAssetRows(){const c=$('asset-rows');c.innerHTML='';assetRows.forEach((a,i)=>{const r=document.createElement('div');r.className='asset-row';r.innerHTML=`<span class="asset-label">${a.name}</span><input class="asset-input" type="number" min="0" max="100" step="1" value="${a.wt}" oninput="assetIn(${i},'wt',+this.value)"><input class="asset-input" type="number" min="0" max="20" step="0.1" value="${a.ret}" oninput="assetIn(${i},'ret',+this.value)"><input class="asset-input" type="number" min="0" max="50" step="0.1" value="${a.vol}" oninput="assetIn(${i},'vol',+this.value)">`;c.appendChild(r);});}
+function buildAssetRows(){
+  const c=$('asset-rows');c.innerHTML='';
+  assetRows.forEach((a,i)=>{
+    const r=document.createElement('div');r.className='asset-row';
+    r.innerHTML=`<span class="asset-label">${a.name}</span><input class="asset-input" type="number" min="0" max="100" step="1" value="${a.wt}" oninput="assetIn(${i},'wt',+this.value)"><input class="asset-input" type="number" min="0" max="20" step="0.1" value="${a.ret}" oninput="assetIn(${i},'ret',+this.value)"><input class="asset-input" type="number" min="0" max="50" step="0.1" value="${a.vol}" oninput="assetIn(${i},'vol',+this.value)">`;
+    c.appendChild(r);
+  });
+}
 function assetIn(i,f,v){assetRows[i][f]=v;update();}
-
 function getPortParams(){
   if(portMode==='simple') return{ret:+$('ret-simple').value,vol:+$('vol-simple').value};
   const sumWt=assetRows.reduce((s,a)=>s+a.wt,0);
   if(Math.abs(sumWt-100)>0.5) return{ret:6,vol:12};
   const wts=assetRows.map(a=>a.wt/100),rets=assetRows.map(a=>a.ret),vols=assetRows.map(a=>a.vol),corr=+$('corr').value;
   const portRet=wts.reduce((s,w,i)=>s+w*rets[i],0);
-  let pv=0;for(let i=0;i<wts.length;i++)for(let j=0;j<wts.length;j++){const rij=i===j?1:corr;pv+=wts[i]*wts[j]*vols[i]*vols[j]*rij/100;}
+  let pv=0;
+  for(let i=0;i<wts.length;i++)for(let j=0;j<wts.length;j++){const rij=i===j?1:corr;pv+=wts[i]*wts[j]*vols[i]*vols[j]*rij/100;}
   return{ret:portRet,vol:Math.sqrt(pv)*10};
 }
 function switchPort(m){portMode=m;['simple','detail'].forEach(x=>{$('port-tab-'+x).classList.toggle('active',x===m);$('port-panel-'+x).classList.toggle('active',x===m);});update();}
 
-function addEvent(){const id=++eventId;events.push({id,label:'자녀 독립자금',age:65,amt:3000});renderEvents();update();}
-function removeEvent(id){events=events.filter(e=>e.id!==id);renderEvents();update();}
-function renderEvents(){
-  const list=$('event-list');list.innerHTML='';
-  if(!events.length){list.innerHTML='<div style="font-size:12px;color:var(--text3);padding:8px 0">이벤트 없음</div>';return;}
-  events.forEach(e=>{const row=document.createElement('div');row.className='event-item';row.innerHTML=`<div><div class="event-label">이벤트 이름</div><input class="event-input" type="text" value="${e.label}" oninput="evUpdate(${e.id},'label',this.value)"></div><div><div class="event-label">본인 나이</div><input class="event-input" type="number" min="50" max="100" value="${e.age}" oninput="evUpdate(${e.id},'age',+this.value)"></div><div><div class="event-label">금액 (현재 물가, 만원)</div><input class="event-input" type="number" min="100" max="100000" step="100" value="${e.amt}" oninput="evUpdate(${e.id},'amt',+this.value)"></div><button class="del-btn" onclick="removeEvent(${e.id})">×</button>`;list.appendChild(row);});
+// ── 공적연금
+function calcP(base,mode,ea,da){
+  if(mode==='early'){const a=-6*(65-ea);return{sa:ea,amt:Math.round(base*(1+a/100)),adj:a};}
+  if(mode==='defer'){const a=7.2*(da-65);return{sa:da,amt:Math.round(base*(1+a/100)),adj:a};}
+  return{sa:65,amt:base,adj:0};
 }
-function evUpdate(id,f,v){const e=events.find(x=>x.id===id);if(e){e[f]=v;update();}}
-
-function calcP(base,mode,ea,da){if(mode==='early'){const a=-6*(65-ea);return{sa:ea,amt:Math.round(base*(1+a/100)),adj:a};}if(mode==='defer'){const a=7.2*(da-65);return{sa:da,amt:Math.round(base*(1+a/100)),adj:a};}return{sa:65,amt:base,adj:0};}
 function renderPMeta(who,p,retAge,base){
   const mode=who==='me'?meMode:spMode;
-  const col={early:'#D85A30',normal:'#378ADD',defer:'#1D9E75'}[mode];
+  const col={early:var_red,normal:var_blue,defer:var_green}[mode]||'#378ADD';
   const ml={early:'조기수령',normal:'정상수령',defer:'연기수령'}[mode];
   const gapY=Math.max(0,p.sa-retAge);
   $(who+'-sa').textContent=p.sa+'세';$(who+'-sa').style.color=col;$(who+'-ml').textContent=ml;
@@ -748,22 +769,7 @@ function renderPMeta(who,p,retAge,base){
   else{$(who+'-be').textContent='기준';$(who+'-be-s').textContent='65세 기준값';}
   $(who+'-notice').innerHTML={early:`<b>1년당 -6%</b> 감액.`,normal:`정상 기준액. 은퇴 후 <b>${gapY}년 공백</b> 자산 충당.`,defer:`<b>1년당 +7.2%</b> 증액.`}[mode];
 }
-
-function toggleSp(){
-  hasSp=!hasSp;
-  $('sp-tr').classList.toggle('on',hasSp);$('sp-tog-lbl').textContent=hasSp?'ON':'OFF';
-  $('sp-sec').classList.toggle('open',hasSp);$('pp-sp').style.display=hasSp?'block':'none';
-  $('ls-sp').style.display=hasSp?'block':'none';
-  $('ls-grid').style.gridTemplateColumns=hasSp?'1fr 1fr':'1fr';
-  $('pw').style.gridTemplateColumns=hasSp?'1fr 1fr':'1fr';
-  $('pt-plus').style.display=hasSp?'':'none';$('pt-sp-w').style.display=hasSp?'':'none';
-  $('solo-pension-phase').style.display=hasSp?'block':'none';
-  $('cmp3').style.display=hasSp?'grid':'none';
-  $('solo-pension-grid').style.gridTemplateColumns=hasSp?'1fr 1fr':'1fr';
-  update();
-}
-function setMode(who,mode){if(who==='me')meMode=mode;else spMode=mode;['early','normal','defer'].forEach(m=>$(who+'-'+m[0]+'-btn').className='tb '+m+(m===mode?' active':''));$(who+'-ec').style.display=mode==='early'?'block':'none';$(who+'-dc').style.display=mode==='defer'?'block':'none';update();}
-function switchTab(t){['a','b','c'].forEach(x=>{$('tab-'+x).className='sc-btn'+(x===t?' act-'+t:'');$('panel-'+x).className='rp'+(x===t?' active':'');});}
+const var_blue='#378ADD',var_green='#1D9E75',var_red='#D85A30';
 
 function getSoloPension(sc){
   if(sc==='b'){const own=+$('b-pension-own').value||0,surv=+$('b-pension-survivor').value||0,etc=+$('b-pension-etc').value||0;return{total:own+surv+etc,own,surv,etc};}
@@ -779,24 +785,84 @@ function updateSoloPensionTotals(){
   $('c-pension-breakdown').textContent=`본인 연금 ${cP.own}만 + 유족연금 ${cP.surv}만 + 기타 ${cP.etc}만`;
 }
 
+function toggleSp(){
+  hasSp=!hasSp;
+  $('sp-tr').classList.toggle('on',hasSp);$('sp-tog-lbl').textContent=hasSp?'ON':'OFF';
+  $('sp-sec').classList.toggle('open',hasSp);$('pp-sp').style.display=hasSp?'block':'none';
+  $('ls-sp').style.display=hasSp?'block':'none';
+  $('ls-grid').style.gridTemplateColumns=hasSp?'1fr 1fr':'1fr';
+  $('pw').style.gridTemplateColumns=hasSp?'1fr 1fr':'1fr';
+  $('pt-plus').style.display=hasSp?'':'none';$('pt-sp-w').style.display=hasSp?'':'none';
+  $('solo-pension-phase').style.display=hasSp?'block':'none';
+  $('cmp3').style.display=hasSp?'grid':'none';
+  $('solo-pension-grid').style.gridTemplateColumns=hasSp?'1fr 1fr':'1fr';
+  // 배우자 소득공백기 표시
+  const gapSpRow=document.getElementById('sbody-gap_sp')?.closest('.stage-row');
+  if(gapSpRow) gapSpRow.style.display=hasSp?'':'none';
+  update();
+}
+function setMode(who,mode){
+  if(who==='me')meMode=mode;else spMode=mode;
+  ['early','normal','defer'].forEach(m=>$(who+'-'+m[0]+'-btn').className='tb '+m+(m===mode?' active':''));
+  $(who+'-ec').style.display=mode==='early'?'block':'none';
+  $(who+'-dc').style.display=mode==='defer'?'block':'none';
+  // 소득공백기 자동 연동 리셋 (수동 아닌 경우)
+  const sid=who==='me'?'gap_me':'gap_sp';
+  stageState[sid].manualOverride=false;
+  update();
+}
+function switchTab(t){['a','b','c'].forEach(x=>{$('tab-'+x).className='sc-btn'+(x===t?' act-'+t:'');$('panel-'+x).className='rp'+(x===t?' active':'');});}
+
+// 인출액 빌더
 function buildW(stages,pensions,years,infl,evts,retireAge){
   const activeS=stages.filter(s=>stageState[s.id].on);
   const monByY=new Array(years).fill(0);
   let cur=0;
-  activeS.forEach(s=>{const st=stageState[s.id];for(let y=cur;y<Math.min(cur+st.yrs,years);y++)monByY[y]=st.mon;cur+=st.yrs;});
+  activeS.forEach(s=>{
+    const st=stageState[s.id];
+    for(let y=cur;y<Math.min(cur+st.yrs,years);y++) monByY[y]=st.mon;
+    cur+=st.yrs;
+  });
   const lastMon=activeS.length?stageState[activeS[activeS.length-1].id].mon:200;
-  for(let y=0;y<years;y++)if(monByY[y]===0)monByY[y]=lastMon;
+  for(let y=0;y<years;y++) if(monByY[y]===0) monByY[y]=lastMon;
+
   return Array.from({length:years},(_,i)=>{
+    const inflFactor=Math.pow(1+infl/100,i+1);
     const living=monByY[i]*12;
     const totalP=pensions.reduce((s,p)=>s+(i>=p.startY?p.amt*12:0),0);
+    // 추가 수입 (현금흐름 물가연동 + 정액연금 명목고정)
+    const ageAtY=retireAge+i;
+    let extraCF=0,extraFP=0;
+    cashflows.forEach(cf=>{const end=cf.endAge>0?cf.endAge:200;if(ageAtY>=cf.startAge&&ageAtY<end)extraCF+=cf.amt*12;});
+    fixedPensions.forEach(fp=>{const end=fp.endAge>0?fp.endAge:200;if(ageAtY>=fp.startAge&&ageAtY<end)extraFP+=fp.amt*12;});
     const evtCost=evts.filter(e=>{const ey=e.age-retireAge;return ey>=0&&Math.floor(ey)===i;}).reduce((s,e)=>s+e.amt*Math.pow(1+infl/100,e.age-retireAge),0);
-    return Math.max(0,living-totalP)*Math.pow(1+infl/100,i+1)+evtCost;
-  });
+    // 인출 필요액 = (생활비 - 공적연금 - 현금흐름수입(물가연동)) × inflFactor - 정액연금(명목) + 이벤트
+    const netMonthly=Math.max(0,living-totalP-extraCF);
+    return netMonthly*inflFactor - extraFP*12 + evtCost;
+  }).map(v=>Math.max(0,v));
 }
 
-function deterPath(start,w,ret,yrs){let b=start;const p=[b];for(let y=1;y<=yrs;y++){b=b*(1+ret/100)-w[y-1];p.push(Math.max(0,b));}return p;}
-function mc(start,w,ret,vol,yrs,inherit,runs=1200){let ok=0;for(let i=0;i<runs;i++){let b=start,alive=true;for(let y=1;y<=yrs;y++){const r=ret+(Math.random()*2-1)*vol*1.5;b=b*(1+r/100)-w[y-1];if(b<0){alive=false;break;}}if(alive&&b>=inherit)ok++;}return ok/runs;}
-function drawC(id,ds,labels,prev){if(prev)prev.destroy();return new Chart($(id),{type:'line',data:{labels,datasets:ds},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{mode:'index',intersect:false,callbacks:{label:ctx=>' '+ctx.dataset.label+': '+fmtW(Math.max(0,ctx.raw))}}},scales:{x:{ticks:{maxTicksLimit:11,font:{size:10},color:'#888'},grid:{display:false}},y:{ticks:{font:{size:10},color:'#888',callback:v=>fmt(v)},grid:{color:'rgba(128,128,128,0.08)'},min:0}},interaction:{mode:'index',intersect:false}}});}
+function deterPath(start,w,ret,yrs){
+  let b=start;const p=[b];
+  for(let y=1;y<=yrs;y++){b=b*(1+ret/100)-w[y-1];p.push(Math.max(0,b));}
+  return p;
+}
+function mc(start,w,ret,vol,yrs,inherit,runs=1200){
+  let ok=0;
+  for(let i=0;i<runs;i++){
+    let b=start,alive=true;
+    for(let y=1;y<=yrs;y++){const r=ret+(Math.random()*2-1)*vol*1.5;b=b*(1+r/100)-w[y-1];if(b<0){alive=false;break;}}
+    if(alive&&b>=inherit)ok++;
+  }
+  return ok/runs;
+}
+function drawC(id,ds,labels,prev){
+  if(prev)prev.destroy();
+  return new Chart($(id),{type:'line',data:{labels,datasets:ds},options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false},tooltip:{mode:'index',intersect:false,callbacks:{label:ctx=>' '+ctx.dataset.label+': '+fmtW(Math.max(0,ctx.raw))}}},
+    scales:{x:{ticks:{maxTicksLimit:11,font:{size:10},color:'#888'},grid:{display:false}},y:{ticks:{font:{size:10},color:'#888',callback:v=>fmt(v)},grid:{color:'rgba(128,128,128,0.08)'},min:0}},
+    interaction:{mode:'index',intersect:false}}});
+}
 
 function fmt(v){const a=Math.abs(v);return a>=10000?(v/10000).toFixed(1)+'억':Math.round(v)+'만';}
 function fmtW(v){return fmt(v)+'원';}
@@ -813,16 +879,29 @@ function renderCFTable(bodyId,stages,pensions,infl,evts,retireAge){
     const ageS=retireAge+yS,ageE=retireAge+yE;
     const midY=(yS+yE)/2;
     const totalP=pensions.reduce((sum,p)=>sum+(midY>=p.startY?p.amt:0),0);
-    const netMon=Math.max(0,s.mon-totalP);
+    const ageAtMid=retireAge+Math.floor(midY);
+    let extraIncome=0;
+    cashflows.forEach(cf=>{const end=cf.endAge>0?cf.endAge:200;if(ageAtMid>=cf.startAge&&ageAtMid<end)extraIncome+=cf.amt;});
+    fixedPensions.forEach(fp=>{const end=fp.endAge>0?fp.endAge:200;if(ageAtMid>=fp.startAge&&ageAtMid<end)extraIncome+=fp.amt;});
+    const totalIncome=totalP+extraIncome;
+    const netMon=Math.max(0,s.mon-totalIncome);
     const tr=document.createElement('tr');
-    tr.innerHTML=`<td><span class="cf-stage-label" style="background:${st.bg};color:${st.tc}">${st.label}</span></td><td>${s.yrs}년</td><td>${ageS}→${ageE}세</td><td>${s.mon}만원</td><td>${totalP>0?totalP+'만원':'—'}</td><td style="font-weight:600">${netMon}만원</td>`;
+    tr.innerHTML=`<td><span class="cf-stage-label" style="background:${st.bg};color:${st.tc}">${st.label}</span></td><td>${s.yrs}년</td><td>${ageS}→${ageE}세</td><td>${s.mon}만원</td><td>${totalIncome>0?totalIncome+'만원':'—'}</td><td style="font-weight:600">${netMon}만원</td>`;
     body.appendChild(tr);cursor+=s.yrs;
   });
-  evts.forEach(e=>{const ey=e.age-retireAge;if(ey<0)return;const fv=Math.round(e.amt*Math.pow(1+infl/100,ey));const tr=document.createElement('tr');tr.style.background='var(--bg2)';tr.innerHTML=`<td><span class="cf-stage-label" style="background:#FFF3CD;color:#7A5800">이벤트: ${e.label}</span></td><td>1회</td><td>${e.age}세</td><td>—</td><td>—</td><td style="font-weight:600;color:#BA7517">일시 ${fmtW(fv)}</td>`;body.appendChild(tr);});
+  evts.forEach(e=>{
+    const ey=e.age-retireAge;if(ey<0)return;
+    const fv=Math.round(e.amt*Math.pow(1+infl/100,ey));
+    const tr=document.createElement('tr');tr.style.background='var(--bg2)';
+    tr.innerHTML=`<td><span class="cf-stage-label" style="background:#FFF3CD;color:#7A5800">이벤트: ${e.label}</span></td><td>1회</td><td>${e.age}세</td><td>—</td><td>—</td><td style="font-weight:600;color:#BA7517">일시 ${fmtW(fv)}</td>`;
+    body.appendChild(tr);
+  });
 }
 
 function update(){
   updateSoloPensionTotals();
+  syncGapYears();
+
   const age=+$('age').value,retAge=+$('retire').value;
   const assetNow=+$('asset').value*10000,saveYr=+$('save').value;
   const spAge=+$('sp-age').value,spRet=+$('sp-retire').value,spSave=+$('sp-save').value;
@@ -838,8 +917,13 @@ function update(){
   const periodB=hasSp?Math.max(1,spLife-retAge-meDeathY):0;
   const periodC=Math.max(1,meLife-retAge-spDeathY);
 
+  // 단계 기간 클램프 (5번)
+  const{periodA:pA,soloPeriod}=clampStageYears(retAge,meLife,spLife,meDeathY,spDeathY);
+
+  // 라벨
   $('l-age').textContent=age+'세';$('l-retire').textContent=retAge+'세';
-  $('l-asset').textContent=fmtW(assetNow);$('l-save').textContent=fmt(saveYr)+'원/년';
+  $('l-asset').textContent=assetNow>=10000?fmtW(assetNow):fmtW(assetNow);
+  $('l-save').textContent=fmt(saveYr)+'원/년';
   if(hasSp){$('l-sp-age').textContent=spAge+'세';$('l-sp-retire').textContent=spRet+'세';$('l-sp-save').textContent=fmt(spSave)+'원/년';}
   $('l-me-life').textContent=meLife+'세';$('l-sp-life').textContent=spLife+'세';
   $('me-pd').textContent=mePeriod+'년';$('me-rtd').textContent=retAge+'→'+meLife+'세';$('me-ntd').textContent=(meLife-age)+'년';
@@ -848,23 +932,35 @@ function update(){
   $('l-sp-base').textContent=spBase+'만원';$('l-sp-e').textContent=spEA+'세';$('l-sp-d').textContent=spDA+'세';
   $('l-buffer').textContent=buf+'년';$('l-infl').textContent=infl.toFixed(1)+'%';$('l-inherit').textContent=fmtW(inherit);
   $('l-me-death').textContent=`은퇴 후 ${meDeathY}년 (${retAge+meDeathY}세)`;
-  $('me-death-sn').innerHTML=`본인 ${retAge+meDeathY}세 사망 가정. 배우자 잔여 기간 <b>${periodB}년</b>.`;
+  $('me-death-sn').innerHTML=`본인 ${retAge+meDeathY}세 사망 가정. 배우자 잔여 기간 <b>${periodB}년</b>. ← 슬라이더로 자유롭게 조절하세요.`;
   $('l-sp-death').textContent=`은퇴 후 ${spDeathY}년 (${retAge+spDeathY}세)`;
-  $('sp-death-sn').innerHTML=`배우자 ${retAge+spDeathY}세 사망 가정. 본인 잔여 기간 <b>${periodC}년</b>.`;
+  $('sp-death-sn').innerHTML=`배우자 ${retAge+spDeathY}세 사망 가정. 본인 잔여 기간 <b>${periodC}년</b>. ← 슬라이더로 자유롭게 조절하세요.`;
+
   if(portMode==='simple'){$('l-ret-s').textContent=+$('ret-simple').value+'%';$('l-vol-s').textContent=+$('vol-simple').value+'%';}
   if(portMode==='detail') $('l-corr').textContent=+$('corr').value;
 
-  const {ret,vol}=getPortParams();
+  const{ret,vol}=getPortParams();
   $('port-ret-out').textContent=ret.toFixed(1)+'%';$('port-vol-out').textContent=vol.toFixed(1)+'%';$('port-real-out').textContent=Math.max(0,ret-infl).toFixed(1)+'%';
 
+  // 단계 요약
   const activeStages=STAGES.filter(s=>stageState[s.id].on);
-  const totalStageYrs=activeStages.reduce((s,st)=>s+stageState[st.id].yrs,0);
-  const errSt=$('err-stage');
-  if(totalStageYrs>periodA+5){errSt.textContent=`단계 합계(${totalStageYrs}년)가 은퇴 기간(${periodA}년)보다 깁니다. 조정을 권장합니다.`;errSt.style.color='var(--amber)';}else{errSt.textContent='';}
-  $('stage-summary').innerHTML=activeStages.map(s=>`<span class="stage-badge" style="background:${s.bg};color:${s.tc}">${s.label}</span> <b>${stageState[s.id].yrs}년</b> 월 <b>${stageState[s.id].mon}만원</b>`).join(' → ');
+  const coupleActive=activeStages.filter(s=>!s.solo);
+  const soloActive=activeStages.filter(s=>s.solo);
+  const coupleTotal=coupleActive.reduce((s,st)=>s+stageState[st.id].yrs,0);
+  const soloTotal=soloActive.reduce((s,st)=>s+stageState[st.id].yrs,0);
+  $('err-stage').textContent='';
+  let summaryHTML=coupleActive.map(s=>`<span class="stage-badge" style="background:${s.bg};color:${s.tc}">${s.label}</span> <b>${stageState[s.id].yrs}년</b>`).join(' → ');
+  if(soloActive.length) summaryHTML+=` | 독거: `+soloActive.map(s=>`<span class="stage-badge" style="background:${s.bg};color:${s.tc}">${s.label}</span> <b>${stageState[s.id].yrs}년</b>`).join(' → ');
+  summaryHTML+=`<br><span style="font-size:11px;color:var(--text3)">부부 단계 합계 ${coupleTotal}년 / 은퇴 기간 ${periodA}년 · 독거 단계 합계 ${soloTotal}년 / 독거 기간 ${soloPeriod}년</span>`;
+  $('stage-summary').innerHTML=summaryHTML;
 
   const totalEvtFV=events.reduce((s,e)=>{const ey=e.age-retAge;return s+(ey>=0?e.amt*Math.pow(1+infl/100,ey):0);},0);
   $('event-total').textContent=events.length>0?`이벤트 ${events.length}건 — 미래가치 합계 ${fmtW(totalEvtFV)}`:'이벤트 없음';
+  const totalCF=cashflows.reduce((s,cf)=>s+cf.amt,0);
+  $('cashflow-total').textContent=cashflows.length>0?`현금흐름 ${cashflows.length}건 — 최대 월 ${totalCF}만원`:'현금흐름 수입 없음';
+  const totalFP=fixedPensions.reduce((s,fp)=>s+fp.amt,0);
+  $('fixedpension-total').textContent=fixedPensions.length>0?`정액 연금 ${fixedPensions.length}건 — 최대 월 ${totalFP}만원`:'정액 연금 없음';
+
   $('ls-summary').innerHTML=hasSp?`A: ${periodA}년 · B: 배우자 잔여 ${periodB}년 · C: 본인 잔여 ${periodC}년`:`본인 은퇴 기간 <b>${mePeriod}년</b>`;
   $('tab-a-p').textContent=periodA+'년 계획';
   $('tab-b-p').textContent=hasSp?`배우자 잔여 ${periodB}년`:'배우자 없음';
@@ -881,15 +977,65 @@ function update(){
 
   const ytr=retAge-age;
   const assetAtRet=assetNow*Math.pow(1+ret/100*0.6,ytr)+saveYr*ytr+(hasSp?spSave*Math.max(0,spRet-spAge):0);
-  const firstActiveMon=activeStages.length?stageState[activeStages[0].id].mon:250;
-  const bufAmt=buf*firstActiveMon*12;
-  const investable=Math.max(0,assetAtRet-bufAmt);
-  const netRet=Math.max(0.01,ret-infl);
+
+  // ── 단계별 버퍼 계산 (핵심 수정)
+  // 각 단계의 실제 월 인출 필요액 = (월 생활비 - 공적연금 - 현금흐름수입) 기준
+  // 가장 부담이 큰 단계의 버퍼를 최대값으로 사용
   const mePstartY=Math.max(0,meP.sa-retAge);
   const spPstartY=hasSp?Math.max(0,spP.sa-retAge):999;
   const pensionsA=hasSp?[{startY:mePstartY,amt:meP.amt},{startY:spPstartY,amt:spP.amt}]:[{startY:mePstartY,amt:meP.amt}];
-
   const stagesA=STAGES.filter(s=>!s.solo);
+
+  function calcStageBuf(stages, pensions, retireAge, bufYrs){
+    const bufMonths = bufYrs * 12;
+    const activeS = stages.filter(s => stageState[s.id].on);
+    let cursor = 0;
+    let maxBuf = 0;
+    const rows = [];
+    activeS.forEach(st => {
+      const s = stageState[st.id];
+      const midY = cursor + s.yrs / 2;
+      const totalP = pensions.reduce((sum, p) => sum + (midY >= p.startY ? p.amt : 0), 0);
+      const ageAtMid = retireAge + Math.floor(midY);
+      let extraIncome = 0;
+      cashflows.forEach(cf => { const end=cf.endAge>0?cf.endAge:200; if(ageAtMid>=cf.startAge&&ageAtMid<end) extraIncome+=cf.amt; });
+      fixedPensions.forEach(fp => { const end=fp.endAge>0?fp.endAge:200; if(ageAtMid>=fp.startAge&&ageAtMid<end) extraIncome+=fp.amt; });
+      const totalIncome = totalP + extraIncome;
+      const netMon = Math.max(0, s.mon - totalIncome);
+      const stageBuf = netMon * bufMonths;
+      if(stageBuf > maxBuf) maxBuf = stageBuf;
+      rows.push({ stage: st, mon: s.mon, income: totalIncome, netMon, stageBuf });
+      cursor += s.yrs;
+    });
+    return { maxBuf, rows };
+  }
+
+  const { maxBuf, rows: bufRows } = calcStageBuf(stagesA, pensionsA, retAge, buf);
+  const bufAmt = maxBuf;
+
+  // 버퍼 테이블 렌더
+  const bufBody = $('buf-body');
+  bufBody.innerHTML = '';
+  bufRows.forEach(r => {
+    const isMax = r.stageBuf === maxBuf && maxBuf > 0;
+    const tr = document.createElement('tr');
+    if(isMax) tr.style.background = 'rgba(55,138,221,0.06)';
+    tr.innerHTML = `
+      <td><span class="cf-stage-label" style="background:${r.stage.bg};color:${r.stage.tc}">${r.stage.label}</span></td>
+      <td>${r.mon}만원</td>
+      <td>${r.income > 0 ? '-' + r.income + '만원' : '—'}</td>
+      <td style="font-weight:600">${r.netMon}만원</td>
+      <td>${buf}년 (${buf*12}개월)</td>
+      <td style="font-weight:700;color:${isMax?'var(--blue)':'var(--text)'}">${fmtW(r.stageBuf)}${isMax?' ← 최대':'  '}</td>
+      <td style="font-size:10px;color:var(--text3)">${isMax?'▶ 기준':'  '}</td>`;
+    bufBody.appendChild(tr);
+  });
+  $('buf-max').textContent = fmtW(bufAmt);
+
+  const investable=Math.max(0,assetAtRet-bufAmt);
+  const netRet=Math.max(0.01,ret-infl);
+
+  // ── A
   const wA=buildW(stagesA,pensionsA,periodA,infl,events,retAge);
   const rateA=investable>0?(wA[0]/investable)*100:0;
   const probA=Math.round(mc(investable,wA,ret,vol,periodA,inherit)*100);
@@ -898,7 +1044,7 @@ function update(){
   const neededA=avgWA*pvFA+inherit*Math.pow(1+netRet/100,-periodA)+bufAmt;
   const gapA=assetAtRet-neededA;
 
-  $('sh-a-desc').textContent=`부부 기준, ${periodA}년 계획. 이벤트 ${events.length}건 포함.`;
+  $('sh-a-desc').textContent=`부부/동반 기준, ${periodA}년 계획. 이벤트 ${events.length}건 · 현금흐름 ${cashflows.length}건 · 정액연금 ${fixedPensions.length}건 포함.`;
   $('a-asset').textContent=fmtW(assetAtRet);$('a-asset-s').textContent=ytr+'년 후 예상';
   $('a-rate').textContent=rateA.toFixed(2)+'%';$('a-rate').className='mv '+rateClass(rateA);$('a-rate-s').textContent=rateA<3.5?'안전':rateA<5?'주의':'위험';
   $('a-prob').textContent=probA+'%';$('a-prob').className='mv '+probClass(probA);$('a-prob-s').textContent=probA>=90?'목표 달성':probA>=70?'보완 필요':'재설계 필요';
@@ -907,9 +1053,9 @@ function update(){
   renderCFTable('cf-body-a',stagesA,pensionsA,infl,events,retAge);
   const labA=Array.from({length:periodA+1},(_,i)=>i===0?'은퇴':i+'년');
   cA=drawC('chart-a',[
-    {label:'낙관',data:deterPath(investable,wA.map((w,i)=>w*(1/(Math.pow(1+infl/100,i+1)))),ret+2,periodA),borderColor:'#1D9E75',borderWidth:2,pointRadius:0,fill:false,tension:.3},
-    {label:'기본',data:deterPath(investable,wA.map((w,i)=>w*(1/(Math.pow(1+infl/100,i+1)))),ret,periodA),borderColor:'#378ADD',borderWidth:2.5,pointRadius:0,fill:false,tension:.3},
-    {label:'비관',data:deterPath(investable,wA.map((w,i)=>w*(1/(Math.pow(1+infl/100,i+1)))),ret-2,periodA),borderColor:'#D85A30',borderWidth:2,pointRadius:0,fill:false,tension:.3},
+    {label:'낙관',data:deterPath(investable,wA,ret+2,periodA),borderColor:'#1D9E75',borderWidth:2,pointRadius:0,fill:false,tension:.3},
+    {label:'기본',data:deterPath(investable,wA,ret,periodA),borderColor:'#378ADD',borderWidth:2.5,pointRadius:0,fill:false,tension:.3},
+    {label:'비관',data:deterPath(investable,wA,ret-2,periodA),borderColor:'#D85A30',borderWidth:2,pointRadius:0,fill:false,tension:.3},
   ],labA,cA);
   $('note-a').textContent=`▲ ${mePstartY}년차 본인 공적연금`+(hasSp?` · ● ${spPstartY}년차 배우자 공적연금`:'');
   let msgA='',clsA='';
@@ -920,13 +1066,13 @@ function update(){
 
   if(!hasSp)return;
 
-  const pathAbase=deterPath(investable,wA.map((w,i)=>w*(1/(Math.pow(1+infl/100,i+1)))),ret,periodA);
+  // ── B (독립 슬라이더 — A와 연동 안 함)
+  const pathAbase=deterPath(investable,wA,ret,periodA);
   const assetAtMeDeath=pathAbase[Math.min(meDeathY,periodA)];
   const remB=Math.max(1,periodB);
   const bP=getSoloPension('b');
-  const pensionsB=[{startY:0,amt:bP.total}];
   const stagesSolo=STAGES.filter(s=>s.solo);
-  const wB=buildW(stagesSolo,pensionsB,remB,infl,events,retAge+meDeathY);
+  const wB=buildW(stagesSolo,[{startY:0,amt:bP.total}],remB,infl,[],retAge+meDeathY);
   const rateB=assetAtMeDeath>0?(wB[0]/assetAtMeDeath)*100:0;
   const probB=Math.round(mc(assetAtMeDeath,wB,ret,vol,remB,inherit)*100);
   const avgWB=wB.reduce((a,b)=>a+b,0)/wB.length;
@@ -936,32 +1082,32 @@ function update(){
   const monB=Math.round(assetAtMeDeath*(rateB/100)/12+bP.total);
   const diffB=probB-probA;
 
-  $('sh-b-desc').textContent=`본인 ${retAge+meDeathY}세 사망 후, 배우자 ${spLife}세까지 ${remB}년. 배우자 공적연금 월 ${bP.total}만원.`;
+  $('sh-b-desc').textContent=`본인 ${retAge+meDeathY}세 사망 가정. 배우자 ${spLife}세까지 ${remB}년. 공적연금 월 ${bP.total}만원.`;
   $('b-asset').textContent=fmtW(assetAtMeDeath);$('b-asset-s').textContent=`은퇴 ${meDeathY}년 후 잔여`;
   $('b-rate').textContent=rateB.toFixed(2)+'%';$('b-rate').className='mv '+rateClass(rateB);$('b-rate-s').textContent=rateB<3.5?'안전':rateB<5?'주의':'위험';
   $('b-prob').textContent=probB+'%';$('b-prob').className='mv '+probClass(probB);$('b-prob-s').textContent=probB>=90?'목표 달성':probB>=70?'보완 필요':'재설계 필요';
   $('b-diff').textContent=(diffB>=0?'+':'')+diffB+'%p';$('b-diff').className='mv '+(diffB>=0?'ok':'danger');
   $('b-mon').textContent=monB+'만원';
   $('b-gap').textContent=(gapB>=0?'+':'')+fmtW(Math.abs(gapB));$('b-gap').className='mv '+(gapB>=0?'ok':'danger');$('b-gap-s').textContent=gapB>=0?'배우자 충분':'배우자 부족';
-  renderCFTable('cf-body-b',stagesSolo,pensionsB,infl,events,retAge+meDeathY);
+  renderCFTable('cf-body-b',stagesSolo,[{startY:0,amt:bP.total}],infl,[],retAge+meDeathY);
   const labB=Array.from({length:remB+1},(_,i)=>i===0?`사망(${retAge+meDeathY}세)`:'+'+i+'년');
   cB=drawC('chart-b',[
-    {label:'낙관',data:deterPath(assetAtMeDeath,wB.map((w,i)=>w*(1/(Math.pow(1+infl/100,i+1)))),ret+2,remB),borderColor:'#1D9E75',borderWidth:2,pointRadius:0,fill:false,tension:.3},
-    {label:'기본',data:deterPath(assetAtMeDeath,wB.map((w,i)=>w*(1/(Math.pow(1+infl/100,i+1)))),ret,remB),borderColor:'#BA7517',borderWidth:2.5,pointRadius:0,fill:false,tension:.3},
-    {label:'비관',data:deterPath(assetAtMeDeath,wB.map((w,i)=>w*(1/(Math.pow(1+infl/100,i+1)))),ret-2,remB),borderColor:'#D85A30',borderWidth:2,pointRadius:0,fill:false,tension:.3},
+    {label:'낙관',data:deterPath(assetAtMeDeath,wB,ret+2,remB),borderColor:'#1D9E75',borderWidth:2,pointRadius:0,fill:false,tension:.3},
+    {label:'기본',data:deterPath(assetAtMeDeath,wB,ret,remB),borderColor:'#BA7517',borderWidth:2.5,pointRadius:0,fill:false,tension:.3},
+    {label:'비관',data:deterPath(assetAtMeDeath,wB,ret-2,remB),borderColor:'#D85A30',borderWidth:2,pointRadius:0,fill:false,tension:.3},
   ],labB,cB);
   $('note-b').textContent=`잔여 ${fmtW(assetAtMeDeath)} | 배우자 홀로 ${remB}년 | 공적연금 월 ${bP.total}만원 (직접 입력)`;
   let msgB='',clsB='';
-  if(probB>=90){clsB='ok';msgB=`<span class="tag tok">안전</span> 배우자 ${remB}년 생존 확률 <b>${probB}%</b>. 공적연금 월 <b>${bP.total}만원</b>이 핵심 안전판입니다.`;}
+  if(probB>=90){clsB='ok';msgB=`<span class="tag tok">안전</span> 배우자 ${remB}년 생존 확률 <b>${probB}%</b>.`;}
   else if(probB>=70){clsB='warn';msgB=`<span class="tag twarn">주의</span> 배우자 확률 <b>${probB}%</b> (A 대비 <b>${diffB}%p</b>). 유족연금·종신보험 보완 검토.`;}
-  else{clsB='danger';msgB=`<span class="tag tdanger">위험</span> 배우자 고갈 위험(확률 <b>${probB}%</b>, A 대비 <b>${diffB}%p</b>). 부족 <b>${fmtW(Math.abs(gapB))}</b> — 종신보험·유족연금 증액 필수.`;}
+  else{clsB='danger';msgB=`<span class="tag tdanger">위험</span> 배우자 고갈 위험(확률 <b>${probB}%</b>, A 대비 <b>${diffB}%p</b>). 부족 <b>${fmtW(Math.abs(gapB))}</b>.`;}
   $('adv-b').innerHTML=msgB;$('adv-b').className='adv '+clsB;
 
+  // ── C (독립 슬라이더)
   const assetAtSpDeath=pathAbase[Math.min(spDeathY,periodA)];
   const remC=Math.max(1,periodC);
   const cP=getSoloPension('c');
-  const pensionsC=[{startY:0,amt:cP.total}];
-  const wC=buildW(stagesSolo,pensionsC,remC,infl,events,retAge+spDeathY);
+  const wC=buildW(stagesSolo,[{startY:0,amt:cP.total}],remC,infl,[],retAge+spDeathY);
   const rateC=assetAtSpDeath>0?(wC[0]/assetAtSpDeath)*100:0;
   const probC=Math.round(mc(assetAtSpDeath,wC,ret,vol,remC,inherit)*100);
   const avgWC=wC.reduce((a,b)=>a+b,0)/wC.length;
@@ -971,27 +1117,28 @@ function update(){
   const monC=Math.round(assetAtSpDeath*(rateC/100)/12+cP.total);
   const diffC=probC-probA;
 
-  $('sh-c-desc').textContent=`배우자 ${retAge+spDeathY}세 사망 후, 본인 ${meLife}세까지 ${remC}년. 본인 공적연금 월 ${cP.total}만원.`;
+  $('sh-c-desc').textContent=`배우자 ${retAge+spDeathY}세 사망 가정. 본인 ${meLife}세까지 ${remC}년. 공적연금 월 ${cP.total}만원.`;
   $('c-asset').textContent=fmtW(assetAtSpDeath);$('c-asset-s').textContent=`은퇴 ${spDeathY}년 후 잔여`;
   $('c-rate').textContent=rateC.toFixed(2)+'%';$('c-rate').className='mv '+rateClass(rateC);$('c-rate-s').textContent=rateC<3.5?'안전':rateC<5?'주의':'위험';
   $('c-prob').textContent=probC+'%';$('c-prob').className='mv '+probClass(probC);$('c-prob-s').textContent=probC>=90?'목표 달성':probC>=70?'보완 필요':'재설계 필요';
   $('c-diff').textContent=(diffC>=0?'+':'')+diffC+'%p';$('c-diff').className='mv '+(diffC>=0?'ok':'danger');
   $('c-mon').textContent=monC+'만원';
   $('c-gap').textContent=(gapC>=0?'+':'')+fmtW(Math.abs(gapC));$('c-gap').className='mv '+(gapC>=0?'ok':'danger');$('c-gap-s').textContent=gapC>=0?'본인 충분':'본인 부족';
-  renderCFTable('cf-body-c',stagesSolo,pensionsC,infl,events,retAge+spDeathY);
+  renderCFTable('cf-body-c',stagesSolo,[{startY:0,amt:cP.total}],infl,[],retAge+spDeathY);
   const labC=Array.from({length:remC+1},(_,i)=>i===0?`사망(${retAge+spDeathY}세)`:'+'+i+'년');
   cC=drawC('chart-c',[
-    {label:'낙관',data:deterPath(assetAtSpDeath,wC.map((w,i)=>w*(1/(Math.pow(1+infl/100,i+1)))),ret+2,remC),borderColor:'#1D9E75',borderWidth:2,pointRadius:0,fill:false,tension:.3},
-    {label:'기본',data:deterPath(assetAtSpDeath,wC.map((w,i)=>w*(1/(Math.pow(1+infl/100,i+1)))),ret,remC),borderColor:'#BA7517',borderWidth:2.5,pointRadius:0,fill:false,tension:.3},
-    {label:'비관',data:deterPath(assetAtSpDeath,wC.map((w,i)=>w*(1/(Math.pow(1+infl/100,i+1)))),ret-2,remC),borderColor:'#D85A30',borderWidth:2,pointRadius:0,fill:false,tension:.3},
+    {label:'낙관',data:deterPath(assetAtSpDeath,wC,ret+2,remC),borderColor:'#1D9E75',borderWidth:2,pointRadius:0,fill:false,tension:.3},
+    {label:'기본',data:deterPath(assetAtSpDeath,wC,ret,remC),borderColor:'#BA7517',borderWidth:2.5,pointRadius:0,fill:false,tension:.3},
+    {label:'비관',data:deterPath(assetAtSpDeath,wC,ret-2,remC),borderColor:'#D85A30',borderWidth:2,pointRadius:0,fill:false,tension:.3},
   ],labC,cC);
   $('note-c').textContent=`잔여 ${fmtW(assetAtSpDeath)} | 본인 홀로 ${remC}년 | 공적연금 월 ${cP.total}만원 (직접 입력)`;
   let msgC='',clsC='';
-  if(probC>=90){clsC='ok';msgC=`<span class="tag tok">안전</span> 본인 ${remC}년 생존 확률 <b>${probC}%</b>. 공적연금 월 <b>${cP.total}만원</b>이 유지됩니다.`;}
+  if(probC>=90){clsC='ok';msgC=`<span class="tag tok">안전</span> 본인 ${remC}년 생존 확률 <b>${probC}%</b>.`;}
   else if(probC>=70){clsC='warn';msgC=`<span class="tag twarn">주의</span> 본인 확률 <b>${probC}%</b> (A 대비 <b>${diffC}%p</b>). 공적연금 연기·배당 자산 확대 검토.`;}
   else{clsC='danger';msgC=`<span class="tag tdanger">위험</span> 본인 고갈 위험(확률 <b>${probC}%</b>, A 대비 <b>${diffC}%p</b>). 부족 <b>${fmtW(Math.abs(gapC))}</b>.`;}
   $('adv-c').innerHTML=msgC;$('adv-c').className='adv '+clsC;
 
+  // 3자 비교
   $('cmp-a-p').textContent=probA+'%';$('cmp-a-p').style.color=probColor(probA);$('cmp-a-r').textContent=rateA.toFixed(2)+'%';$('cmp-a-period').textContent=periodA+'년';
   $('cmp-b-p').textContent=probB+'%';$('cmp-b-p').style.color=probColor(probB);$('cmp-b-r').textContent=rateB.toFixed(2)+'%';$('cmp-b-period').textContent=`배우자 잔여 ${remB}년`;
   $('cmp-c-p').textContent=probC+'%';$('cmp-c-p').style.color=probColor(probC);$('cmp-c-r').textContent=rateC.toFixed(2)+'%';$('cmp-c-period').textContent=`본인 잔여 ${remC}년`;
@@ -1001,15 +1148,26 @@ function update(){
   else{$('cmp3-msg').textContent=`세 시나리오 모두 90% 이상 — 두 분 모두 잘 보호되고 있습니다.`;$('cmp3-msg').style.color='#1D9E75';}
 }
 
+// 이벤트 리스너
 ['b-pension-own','b-pension-survivor','b-pension-etc','c-pension-own','c-pension-survivor','c-pension-etc'].forEach(id=>$(id).addEventListener('input',update));
 ['age','retire','asset','save','sp-age','sp-retire','sp-save','me-life','sp-life',
  'ret-simple','vol-simple','corr','me-base','me-early','me-defer','sp-base','sp-early','sp-defer',
  'buffer','infl','inherit','me-death','sp-death'
 ].forEach(id=>$(id).addEventListener('input',update));
 
-buildStageGrid();buildAssetRows();renderEvents();
+// 초기화
+buildStageGrid();
+buildAssetRows();
+renderEvents();
+renderCashflows();
+renderFixedPensions();
 $('ls-grid').style.gridTemplateColumns='1fr';
 $('pw').style.gridTemplateColumns='1fr';
+// 배우자 소득공백기: 초기에는 숨김 (배우자 ON 시 표시)
+const gapSpRow=document.getElementById('sbody-gap_sp')?.closest('.stage-row');
+if(gapSpRow) gapSpRow.style.display='none';
+// 소득공백기 초기 자동 계산값으로 설정
+syncGapYears();
 update();
 </script>
 </body>
