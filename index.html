@@ -506,8 +506,8 @@ const STAGES=[
 ];
 let stageState={};
 STAGES.forEach(s=>{
-  // 소득공백기는 기본값 ON, 나머지는 기존대로
-  const defaultOn = ['active','recall','gap_me','gap_sp'].includes(s.id);
+  // 소득공백기: 본인은 기본 ON, 배우자는 기본 OFF (배우자 토글 ON 시 자동 활성화)
+  const defaultOn = ['active','recall','gap_me'].includes(s.id);
   stageState[s.id]={on:defaultOn,yrs:s.defaultYrs,mon:s.defaultMon,manualOverride:false};
 });
 
@@ -578,19 +578,29 @@ function stageMonInput(id,val){stageState[id].mon=+val;$('stmon-lbl-'+id).textCo
 function syncGapYears(){
   ['me','sp'].forEach(who=>{
     const sid=who==='me'?'gap_me':'gap_sp';
-    if(who==='sp'&&!hasSp) return; // 배우자 없으면 스킵
+
+    // 배우자 소득공백기: 배우자 없으면 무조건 OFF
+    if(who==='sp'&&!hasSp){
+      stageState[sid].on=false;
+      stageState[sid].yrs=0;
+      const trEl=$('str-'+sid);const lblEl=$('stlbl-'+sid);const bodyEl=$('sbody-'+sid);
+      if(trEl) trEl.classList.remove('on');
+      if(lblEl) lblEl.textContent='OFF';
+      if(bodyEl) bodyEl.classList.remove('open');
+      return;
+    }
+
     if(stageState[sid].manualOverride) return; // 수동 수정한 경우 자동 연동 안 함
+
     const autoYrs=calcGapYears(who);
     stageState[sid].yrs=autoYrs;
     // 공백 기간이 0이면 자동 OFF, 1 이상이면 자동 ON
     stageState[sid].on = autoYrs > 0;
+
     // UI 업데이트
-    const trEl=$('str-'+sid);
-    const lblEl=$('stlbl-'+sid);
-    const bodyEl=$('sbody-'+sid);
-    const sliderEl=$('styr-'+sid);
-    const sliderLblEl=$('styr-lbl-'+sid);
-    const autoEl=$('styr-auto-'+sid);
+    const trEl=$('str-'+sid);const lblEl=$('stlbl-'+sid);
+    const bodyEl=$('sbody-'+sid);const sliderEl=$('styr-'+sid);
+    const sliderLblEl=$('styr-lbl-'+sid);const autoEl=$('styr-auto-'+sid);
     if(trEl) trEl.classList.toggle('on', stageState[sid].on);
     if(lblEl) lblEl.textContent=stageState[sid].on?'ON':'OFF';
     if(bodyEl) bodyEl.classList.toggle('open', stageState[sid].on);
@@ -796,9 +806,18 @@ function toggleSp(){
   $('solo-pension-phase').style.display=hasSp?'block':'none';
   $('cmp3').style.display=hasSp?'grid':'none';
   $('solo-pension-grid').style.gridTemplateColumns=hasSp?'1fr 1fr':'1fr';
-  // 배우자 소득공백기 표시
+  // 배우자 소득공백기 표시/숨김
   const gapSpRow=document.getElementById('sbody-gap_sp')?.closest('.stage-row');
   if(gapSpRow) gapSpRow.style.display=hasSp?'':'none';
+  // 배우자 OFF 시 gap_sp 수동 override 리셋 후 강제 OFF
+  if(!hasSp){
+    stageState['gap_sp'].manualOverride=false;
+    stageState['gap_sp'].on=false;
+    stageState['gap_sp'].yrs=0;
+  } else {
+    // 배우자 ON 시 수동 override 리셋하여 자동 계산 재활성화
+    stageState['gap_sp'].manualOverride=false;
+  }
   update();
 }
 function setMode(who,mode){
