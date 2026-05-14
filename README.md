@@ -41,7 +41,7 @@ Branch: main / (root) → Save
 ```
 
 ### 4단계: 접속
-약 1~2분 후 `https://[username].github.io/retirement-calculator/` 접속 가능
+약 1~2분 후 `https://einsteindha.github.io/retirement-calculator/` 접속 가능
 
 ---
 
