@@ -22,16 +22,17 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans KR',sans
 .header-title{font-size:17px;font-weight:700;color:#E8C97E}
 .header-sub{font-size:12px;color:#B0BAD4;margin-top:2px}
 .header-badge{background:#C9A84C;color:#0D1B3E;font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px;white-space:nowrap}
-.container{width:100%;margin:0;padding:0}
-/* 좌우 분할 레이아웃 — 전체 화면 활용 */
-.split-wrap{display:flex;align-items:flex-start;min-height:calc(100vh - 60px);width:100%}
-.split-left{flex:1 1 55%;min-width:0;padding:20px 24px 40px;overflow-y:auto;height:calc(100vh - 60px);position:sticky;top:0}
-.split-right{flex:1 1 45%;min-width:0;padding:20px 24px 40px;overflow-y:auto;height:calc(100vh - 60px);position:sticky;top:0;border-left:1px solid var(--border);background:var(--bg3)}
-/* 모바일: 세로 스크롤로 전환 */
+/* ── 레이아웃 */
+body{display:flex;flex-direction:column;height:100vh;overflow:hidden}
+.header{flex-shrink:0}
+.container{flex:1;display:flex;min-height:0;overflow:hidden}
+.split-left{flex:0 0 55%;min-width:0;padding:20px 24px 40px;overflow-y:auto;overflow-x:hidden}
+.split-right{flex:0 0 45%;min-width:0;padding:20px 24px 40px;overflow-y:auto;overflow-x:hidden;border-left:1px solid var(--border);background:var(--bg3)}
 @media(max-width:900px){
-  .split-wrap{flex-direction:column}
-  .split-left,.split-right{flex:none;width:100%;height:auto;position:static;padding:16px 14px 24px;border-left:none}
-  .split-right{border-top:2px solid var(--border)}
+  body{height:auto;overflow:visible}
+  .container{flex-direction:column;overflow:visible}
+  .split-left,.split-right{flex:none;width:100%;padding:16px 14px 24px;overflow-x:hidden}
+  .split-right{border-left:none;border-top:2px solid var(--border)}
 }
 /* 시나리오 탭 — 밝은 배경에서 텍스트 가시성 */
 .sc-btn.act-a{background:#EBF3FF;color:#185FA5}
@@ -172,7 +173,7 @@ input[type=range]{width:100%;margin-top:2px;accent-color:var(--blue)}
 .cf-table td{padding:5px 7px;border-bottom:1px solid var(--border)}
 .cf-table tr:last-child td{border-bottom:none}
 .cf-stage-label{font-size:10px;padding:1px 6px;border-radius:3px;font-weight:600}
-.footer{text-align:center;padding:18px;font-size:11px;color:var(--text3);border-top:1px solid var(--border);margin-top:28px}
+.footer{flex-shrink:0;text-align:center;padding:14px;font-size:11px;color:var(--text3);border-top:1px solid var(--border)}
 @media(max-width:600px){
   .flow-grid-4{grid-template-columns:1fr 1fr}
   .solo-pension-grid{grid-template-columns:1fr}
@@ -191,7 +192,6 @@ input[type=range]{width:100%;margin-top:2px;accent-color:var(--blue)}
   <span class="header-badge">교육용 참고자료</span>
 </div>
 <div class="container">
-<div class="split-wrap">
 <!-- LEFT: 입력 영역 -->
 <div class="split-left">
 
@@ -272,12 +272,6 @@ input[type=range]{width:100%;margin-top:2px;accent-color:var(--blue)}
       </div>
       <div class="sn" style="margin-top:8px">은퇴 후에는 인출기 특성상 적립기보다 보수적인 수익률·변동성을 설정하는 것이 일반적입니다.</div>
     </div>
-      <div class="asset-header"><span>자산군</span><span>비중(%)</span><span>기대수익률(%)</span><span>변동성(%)</span></div>
-      <div id="asset-rows"></div>
-      <div class="err" id="err-port"></div>
-      <div style="margin-top:7px;font-size:12px;color:var(--text2)">자산군간 평균 상관계수 <span class="iv" id="l-corr">0.3</span></div>
-      <input type="range" id="corr" min="0" max="0.9" step="0.1" value="0.3" style="width:100%;margin-top:3px">
-      <div class="sn">0 = 완전 분산 / 0.5 = 보통 / 0.9 = 거의 동일 움직임</div>
     </div>
     <div class="port-result" style="grid-template-columns:repeat(auto-fit,minmax(130px,1fr))">
       <div class="pr-item"><div class="pr-label">적립기 수익률</div><div class="pr-val" id="port-ret-out">—</div></div>
@@ -525,11 +519,10 @@ input[type=range]{width:100%;margin-top:2px;accent-color:var(--blue)}
 </div>
 
 </div><!-- /split-right -->
-</div><!-- /split-wrap -->
+</div><!-- /container -->
 <div class="footer">
   ⚠️ 본 계산기는 교육 목적의 참고자료입니다. 실제 재무 의사결정은 반드시 공인 재무설계사(CFP)와 상담하세요.<br>
   정원준 CFP · 서울리(Re)테크 · 몬테카를로 시뮬레이션 1,200회 기반
-</div>
 </div>
 
 <script>
