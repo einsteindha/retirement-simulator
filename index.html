@@ -17,20 +17,18 @@
   :root{--bg:#1a1b26;--bg2:#24253a;--bg3:#2d2e45;--text:#e8eaf6;--text2:#9fa8c0;--text3:#6b7394;--border:rgba(255,255,255,.08);--border2:rgba(255,255,255,.15);}
 }
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans KR',sans-serif;background:var(--bg3);color:var(--text);font-size:14px;line-height:1.6}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans KR',sans-serif;background:var(--bg3);color:var(--text);font-size:14px;line-height:1.6;display:flex;flex-direction:column;height:100vh;overflow:hidden;margin:0}
 .header{background:#0D1B3E;color:#fff;padding:18px 24px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
 .header-title{font-size:17px;font-weight:700;color:#E8C97E}
 .header-sub{font-size:12px;color:#B0BAD4;margin-top:2px}
 .header-badge{background:#C9A84C;color:#0D1B3E;font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px;white-space:nowrap}
-/* ── 레이아웃 */
-body{display:flex;flex-direction:column;height:100vh;overflow:hidden}
 .header{flex-shrink:0}
-.container{flex:1;display:flex;min-height:0;overflow:hidden}
+.container{flex:1;display:flex;min-height:0}
 .split-left{flex:0 0 55%;min-width:0;padding:20px 24px 40px;overflow-y:auto;overflow-x:hidden}
 .split-right{flex:0 0 45%;min-width:0;padding:20px 24px 40px;overflow-y:auto;overflow-x:hidden;border-left:1px solid var(--border);background:var(--bg3)}
 @media(max-width:900px){
   body{height:auto;overflow:visible}
-  .container{flex-direction:column;overflow:visible}
+  .container{flex-direction:column}
   .split-left,.split-right{flex:none;width:100%;padding:16px 14px 24px;overflow-x:hidden}
   .split-right{border-left:none;border-top:2px solid var(--border)}
 }
