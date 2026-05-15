@@ -585,11 +585,13 @@ function clampStageYears(retireAge,meLife,spLife){
   const mePeriod=Math.max(1,meLife-retireAge);
   const spLifeFromRet=hasSp?spLife-retireAge:0;
   const periodA=hasSp?Math.max(mePeriod,spLifeFromRet):mePeriod;
-  // 독거 기간: 기대수명 짧은 쪽 기준
+  // 독거 기간: 현재 나이 기준 절대 사망 연도로 비교
   let soloPeriod=mePeriod;
   if(hasSp){
-    const meD=meLife-retireAge, spD=spLife-retireAge;
-    soloPeriod = meD<=spD ? Math.max(1,spD-meD) : Math.max(1,meD-spD);
+    const age=+$('age').value, spAge=+$('sp-age').value;
+    const meDiesAtYear = meLife - age;
+    const spDiesAtYear = spLife - spAge;
+    soloPeriod = Math.max(1, Math.abs(meDiesAtYear - spDiesAtYear));
   }
 
   // 부부 단계 합계 제한
@@ -986,18 +988,24 @@ function update(){
   // 배우자 없으면: 본인 단독 시나리오
   let soloWho, soloDeathY, soloPeriod, soloRetAge;
   if(hasSp){
-    const meDeathFromRet = meLife - retAge;   // 본인 기대수명 기준 사망 연도
-    const spDeathFromRet = spLife - retAge;   // 배우자 기대수명 기준 사망 연도
-    if(meDeathFromRet <= spDeathFromRet){
+    // 현재 시점 기준 절대 사망 연도로 비교 (나이 차이 반영)
+    const age = +$('age').value;
+    const spAge = +$('sp-age').value;
+    const meDiesAtYear = meLife - age;    // 현재부터 본인 사망까지 년수
+    const spDiesAtYear = spLife - spAge;  // 현재부터 배우자 사망까지 년수
+    
+    if(meDiesAtYear <= spDiesAtYear){
       // 본인이 먼저 사망 → 배우자 독거
-      soloWho='sp'; soloDeathY=meDeathFromRet;
-      soloPeriod=Math.max(1,spLife-retAge-soloDeathY);
-      soloRetAge=retAge;
+      soloWho='sp';
+      soloDeathY = meLife - retAge;       // 본인 은퇴 기준 사망 연도
+      soloPeriod = Math.max(1, spDiesAtYear - meDiesAtYear); // 실제 독거 기간
+      soloRetAge = retAge;
     } else {
       // 배우자가 먼저 사망 → 본인 독거
-      soloWho='me'; soloDeathY=spDeathFromRet;
-      soloPeriod=Math.max(1,meLife-retAge-soloDeathY);
-      soloRetAge=retAge;
+      soloWho='me';
+      soloDeathY = spLife - retAge + (spAge - age); // 본인 은퇴 기준 배우자 사망 연도
+      soloPeriod = Math.max(1, meDiesAtYear - spDiesAtYear); // 실제 독거 기간
+      soloRetAge = retAge;
     }
   } else {
     soloWho='me'; soloDeathY=0; soloPeriod=mePeriod; soloRetAge=retAge;
