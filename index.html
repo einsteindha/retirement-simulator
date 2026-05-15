@@ -263,10 +263,17 @@ input[type=range]{width:100%;margin-top:2px;accent-color:var(--blue)}
     </div>
     <div class="port-panel active" id="port-panel-simple">
       <div class="sn" style="margin-bottom:9px">CFP 상담 결과 또는 본인 추정치를 직접 입력하세요. 토스·뱅크샐러드 등 마이데이터 앱에서 전체 금융자산을 확인한 후 입력하시면 더 정확합니다.</div>
-      <div class="g2">
-        <div class="ic"><div class="il">포트폴리오 기대수익률 <span class="iv" id="l-ret-s">6.5%</span></div><input type="range" id="ret-simple" min="1" max="12" step="0.5" value="6.5"></div>
-        <div class="ic"><div class="il">포트폴리오 변동성(표준편차) <span class="iv" id="l-vol-s">12.0%</span></div><input type="range" id="vol-simple" min="1" max="25" step="0.5" value="12"></div>
+      <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:6px">은퇴 전 (적립기) — 자산 성장 추산에 사용</div>
+      <div class="g2" style="margin-bottom:12px">
+        <div class="ic"><div class="il">기대수익률 <span class="iv" id="l-ret-s">7.0%</span></div><input type="range" id="ret-simple" min="1" max="15" step="0.5" value="7"></div>
+        <div class="ic"><div class="il">변동성(표준편차) <span class="iv" id="l-vol-s">14.0%</span></div><input type="range" id="vol-simple" min="1" max="30" step="0.5" value="14"></div>
       </div>
+      <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:6px">은퇴 후 (인출기) — 몬테카를로 시뮬레이션에 사용</div>
+      <div class="g2">
+        <div class="ic"><div class="il">기대수익률 <span class="iv" id="l-ret-r">5.0%</span></div><input type="range" id="ret-retire" min="0.5" max="12" step="0.5" value="5"></div>
+        <div class="ic"><div class="il">변동성(표준편차) <span class="iv" id="l-vol-r">10.0%</span></div><input type="range" id="vol-retire" min="1" max="25" step="0.5" value="10"></div>
+      </div>
+      <div class="sn" style="margin-top:8px">은퇴 후에는 인출기 특성상 적립기보다 보수적인 수익률·변동성을 설정하는 것이 일반적입니다.</div>
     </div>
     <div class="port-panel" id="port-panel-detail">
       <div class="sn" style="margin-bottom:9px">실제 계좌를 보며 자산군별로 입력하세요. 비중 합계 = 100%.</div>
@@ -277,10 +284,11 @@ input[type=range]{width:100%;margin-top:2px;accent-color:var(--blue)}
       <input type="range" id="corr" min="0" max="0.9" step="0.1" value="0.3" style="width:100%;margin-top:3px">
       <div class="sn">0 = 완전 분산 / 0.5 = 보통 / 0.9 = 거의 동일 움직임</div>
     </div>
-    <div class="port-result">
-      <div class="pr-item"><div class="pr-label">포트폴리오 기대수익률</div><div class="pr-val" id="port-ret-out">—</div></div>
-      <div class="pr-item"><div class="pr-label">포트폴리오 변동성</div><div class="pr-val" id="port-vol-out">—</div></div>
-      <div class="pr-item"><div class="pr-label">실질 수익률 (인플레 차감)</div><div class="pr-val" id="port-real-out">—</div></div>
+    <div class="port-result" style="grid-template-columns:repeat(auto-fit,minmax(130px,1fr))">
+      <div class="pr-item"><div class="pr-label">적립기 수익률</div><div class="pr-val" id="port-ret-out">—</div></div>
+      <div class="pr-item"><div class="pr-label">적립기 변동성</div><div class="pr-val" id="port-vol-out">—</div></div>
+      <div class="pr-item"><div class="pr-label">인출기 수익률</div><div class="pr-val" id="port-ret-r-out">—</div></div>
+      <div class="pr-item"><div class="pr-label">인출기 실질수익률</div><div class="pr-val" id="port-real-out">—</div></div>
     </div>
   </div>
 </div>
@@ -373,8 +381,8 @@ input[type=range]{width:100%;margin-top:2px;accent-color:var(--blue)}
 
 <!-- 9. 현금흐름 수입 -->
 <div class="phase">
-  <div class="pt">9 · 추가 현금흐름 수입 (주택연금·월세 등 정기 수입)</div>
-  <div class="sn" style="margin-bottom:9px">주택연금, 월세 수입 등 은퇴 후 정기적으로 들어오는 수입을 입력하세요. 인출 필요액에서 차감됩니다.</div>
+  <div class="pt">9 · 추가 현금흐름 수입 (물가연동 정기 수입)</div>
+  <div class="sn" style="margin-bottom:9px">임대소득, 브릿지잡 급여 등 <b>실질가치가 유지되는</b> 정기 수입을 입력하세요. 물가상승률이 자동 반영됩니다.<br>주택연금처럼 <b>명목 고정</b>인 수입은 아래 섹션 10(정액 수령 연금)에 입력하세요.</div>
   <div class="flow-list" id="cashflow-list"></div>
   <button class="add-btn" onclick="addCashflow()">+ 현금흐름 수입 추가</button>
   <div style="font-size:12px;color:var(--text2);padding:6px 10px;background:var(--bg2);border-radius:var(--radius);margin-top:9px" id="cashflow-total">현금흐름 수입 없음</div>
@@ -382,8 +390,8 @@ input[type=range]{width:100%;margin-top:2px;accent-color:var(--blue)}
 
 <!-- 10. 정액 수령 연금 -->
 <div class="phase">
-  <div class="pt">10 · 정액 수령 연금 (보험사 연금 등 고정 인출)</div>
-  <div class="sn" style="margin-bottom:9px">보험사 연금처럼 매달 고정 금액이 지급되는 상품을 입력하세요. 지급 기간 동안 인출 필요액에서 차감됩니다. (물가 연동 없음)</div>
+  <div class="pt">10 · 정액 수령 연금 (주택연금·보험사 연금 등 명목 고정 인출)</div>
+  <div class="sn" style="margin-bottom:9px">주택연금, 보험사 연금처럼 <b>명목 고정 금액</b>이 지급되는 상품을 입력하세요. 물가 연동 없이 차감됩니다. 시간이 지날수록 실질가치가 감소하는 점에 유의하세요.</div>
   <div class="flow-list" id="fixedpension-list"></div>
   <button class="add-btn" onclick="addFixedPension()">+ 정액 연금 추가</button>
   <div style="font-size:12px;color:var(--text2);padding:6px 10px;background:var(--bg2);border-radius:var(--radius);margin-top:9px" id="fixedpension-total">정액 연금 없음</div>
@@ -445,8 +453,42 @@ input[type=range]{width:100%;margin-top:2px;accent-color:var(--blue)}
     <div style="overflow-x:auto"><table class="cf-table"><thead><tr><th>단계</th><th>기간</th><th>나이</th><th>월 생활비</th><th>공적연금·수입</th><th>월 인출 필요</th></tr></thead><tbody id="cf-body-a"></tbody></table></div>
   </div>
   <div class="cc">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:7px"><span style="font-size:13px;font-weight:600">연도별 자산 — 시나리오 A</span><div class="leg"><div class="li"><div class="ld" style="background:#1D9E75"></div>낙관</div><div class="li"><div class="ld" style="background:#378ADD"></div>기본</div><div class="li"><div class="ld" style="background:#D85A30"></div>비관</div></div></div>
-    <div style="position:relative;width:100%;height:240px"><canvas id="chart-a" role="img" aria-label="시나리오A 자산 잔액"></canvas></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:7px">
+      <span style="font-size:13px;font-weight:600">연도별 자산 — 시나리오 A</span>
+      <div class="leg">
+        <div class="li"><div class="ld" style="background:#1D9E75"></div>낙관</div>
+        <div class="li"><div class="ld" style="background:#378ADD"></div>기본</div>
+        <div class="li"><div class="ld" style="background:#D85A30"></div>비관</div>
+        <div class="li seq-leg" id="seq-leg" style="display:none"><div class="ld" style="background:#A855F7"></div>수익률 시나리오</div>
+      </div>
+    </div>
+    <!-- 시퀀스 리스크 입력 -->
+    <div style="background:var(--bg2);border-radius:var(--radius);padding:10px 12px;margin-bottom:10px">
+      <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:8px">
+        수익률 발생 순서 시나리오
+        <span style="font-weight:400;color:var(--text3);margin-left:6px">— 특정 기간에 고정 수익률을 적용한 선을 추가합니다</span>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:8px;align-items:end">
+        <div>
+          <div style="font-size:10px;color:var(--text2);margin-bottom:3px">시작 시점 (은퇴 후 N년)</div>
+          <input type="number" id="seq-start" min="0" max="40" step="1" value="0" oninput="updateSeq()" style="width:100%;padding:5px 8px;border:1px solid var(--border2);border-radius:var(--radius);background:var(--bg);color:var(--text);font-size:12px">
+        </div>
+        <div>
+          <div style="font-size:10px;color:var(--text2);margin-bottom:3px">지속 기간 (년)</div>
+          <input type="number" id="seq-dur" min="1" max="20" step="1" value="5" oninput="updateSeq()" style="width:100%;padding:5px 8px;border:1px solid var(--border2);border-radius:var(--radius);background:var(--bg);color:var(--text);font-size:12px">
+        </div>
+        <div>
+          <div style="font-size:10px;color:var(--text2);margin-bottom:3px">해당 기간 수익률 (%)</div>
+          <input type="number" id="seq-ret" min="-30" max="30" step="1" value="-15" oninput="updateSeq()" style="width:100%;padding:5px 8px;border:1px solid var(--border2);border-radius:var(--radius);background:var(--bg);color:var(--text);font-size:12px">
+        </div>
+        <div style="display:flex;gap:5px">
+          <button onclick="applySeq()" style="padding:5px 10px;font-size:11px;font-weight:600;background:var(--purple,#8B5CF6);color:#fff;border:none;border-radius:var(--radius);cursor:pointer">적용</button>
+          <button onclick="clearSeq()" style="padding:5px 8px;font-size:11px;background:var(--bg);color:var(--text2);border:1px solid var(--border2);border-radius:var(--radius);cursor:pointer">초기화</button>
+        </div>
+      </div>
+      <div style="font-size:11px;color:var(--text3);margin-top:6px" id="seq-preview">— 값을 입력하고 적용 버튼을 누르세요</div>
+    </div>
+    <div style="position:relative;width:100%;height:260px"><canvas id="chart-a" role="img" aria-label="시나리오A 자산 잔액"></canvas></div>
     <div style="font-size:11px;color:var(--text3);margin-top:6px" id="note-a"></div>
   </div>
   <div class="adv" id="adv-a"></div>
@@ -722,15 +764,21 @@ function buildAssetRows(){
   });
 }
 function assetIn(i,f,v){assetRows[i][f]=v;update();}
-function getPortParams(){
-  if(portMode==='simple') return{ret:+$('ret-simple').value,vol:+$('vol-simple').value};
+function getPortParams(phase='retire'){
+  // phase: 'accum'(적립기) or 'retire'(인출기)
+  if(portMode==='simple'){
+    if(phase==='accum') return{ret:+$('ret-simple').value,vol:+$('vol-simple').value};
+    return{ret:+$('ret-retire').value,vol:+$('vol-retire').value};
+  }
   const sumWt=assetRows.reduce((s,a)=>s+a.wt,0);
-  if(Math.abs(sumWt-100)>0.5) return{ret:6,vol:12};
+  if(Math.abs(sumWt-100)>0.5) return{ret:phase==='accum'?7:5,vol:phase==='accum'?14:10};
   const wts=assetRows.map(a=>a.wt/100),rets=assetRows.map(a=>a.ret),vols=assetRows.map(a=>a.vol),corr=+$('corr').value;
   const portRet=wts.reduce((s,w,i)=>s+w*rets[i],0);
   let pv=0;
   for(let i=0;i<wts.length;i++)for(let j=0;j<wts.length;j++){const rij=i===j?1:corr;pv+=wts[i]*wts[j]*vols[i]*vols[j]*rij/100;}
-  return{ret:portRet,vol:Math.sqrt(pv)*10};
+  const portVol=Math.sqrt(pv)*10;
+  // 상세탭: 인출기는 동일 입력값 사용 (사용자가 직접 구분해서 입력)
+  return{ret:portRet,vol:portVol};
 }
 function switchPort(m){portMode=m;['simple','detail'].forEach(x=>{$('port-tab-'+x).classList.toggle('active',x===m);$('port-panel-'+x).classList.toggle('active',x===m);});update();}
 
@@ -818,18 +866,93 @@ function deterPath(start,w,ret,yrs,inflowArr=[]){
   let b=start;const p=[b];
   for(let y=1;y<=yrs;y++){
     b=b*(1+ret/100)-w[y-1];
-    // 해당 연도 자산 유입 추가
     if(inflowArr[y-1]) b+=inflowArr[y-1];
     p.push(Math.max(0,b));
   }
   return p;
 }
+
+// 시퀀스 리스크: 특정 구간에 고정 수익률 적용
+function deterPathSeq(start,w,ret,yrs,inflowArr,seqStart,seqDur,seqRet){
+  let b=start;const p=[b];
+  for(let y=1;y<=yrs;y++){
+    const inSeq=(y-1>=seqStart&&y-1<seqStart+seqDur);
+    const r=inSeq?seqRet:ret;
+    b=b*(1+r/100)-w[y-1];
+    if(inflowArr&&inflowArr[y-1]) b+=inflowArr[y-1];
+    p.push(Math.max(0,b));
+  }
+  return p;
+}
+
+// 시퀀스 리스크 상태
+let seqActive=false,seqStartV=0,seqDurV=5,seqRetV=-15;
+let _seqChartData=null;
+
+function updateSeq(){
+  const start=+($('seq-start').value)||0;
+  const dur=+($('seq-dur').value)||5;
+  const r=+($('seq-ret').value)||0;
+  const sign=r>=0?'+':'';
+  const retColor=r>=0?'#1D9E75':'#D85A30';
+  const prev=$('seq-preview');
+  if(prev) prev.innerHTML=`은퇴 후 <b>${start}년차</b>부터 <b>${dur}년간</b> 수익률 <b style="color:${retColor}">${sign}${r}%</b> 고정 → ${start+dur}년차 이후 정상 복귀`;
+}
+
+function applySeq(){
+  seqStartV=+($('seq-start').value)||0;
+  seqDurV=+($('seq-dur').value)||5;
+  seqRetV=+($('seq-ret').value)||0;
+  seqActive=true;
+  const leg=$('seq-leg');if(leg)leg.style.display='';
+  updateSeqChart();
+}
+
+function clearSeq(){
+  seqActive=false;
+  const leg=$('seq-leg');if(leg)leg.style.display='none';
+  updateSeqChart();
+  const prev=$('seq-preview');
+  if(prev)prev.textContent='— 값을 입력하고 적용 버튼을 누르세요';
+}
+
+function updateSeqChart(){
+  if(!_seqChartData||!cA) return;
+  const{investable,wA,ret,periodA,inflowArrA}=_seqChartData;
+  const datasets=[
+    {label:'낙관',data:deterPath(investable,wA,ret+2,periodA,inflowArrA),borderColor:'#1D9E75',borderWidth:2,pointRadius:0,fill:false,tension:.3},
+    {label:'기본',data:deterPath(investable,wA,ret,periodA,inflowArrA),borderColor:'#378ADD',borderWidth:2.5,pointRadius:0,fill:false,tension:.3},
+    {label:'비관',data:deterPath(investable,wA,ret-2,periodA,inflowArrA),borderColor:'#D85A30',borderWidth:2,pointRadius:0,fill:false,tension:.3},
+  ];
+  if(seqActive){
+    const sign=seqRetV>=0?'+':'';
+    datasets.push({
+      label:`${seqStartV}년차~${seqStartV+seqDurV}년차 ${sign}${seqRetV}%`,
+      data:deterPathSeq(investable,wA,ret,periodA,inflowArrA,seqStartV,seqDurV,seqRetV),
+      borderColor:'#A855F7',borderWidth:2.5,
+      borderDash:[6,3],pointRadius:0,fill:false,tension:.3
+    });
+  }
+  cA.data.datasets=datasets;
+  cA.update('none');
+}
+// 박스-뮬러 변환: 표준정규분포 난수 생성
+function randNorm(){
+  let u,v,s;
+  do{u=Math.random()*2-1;v=Math.random()*2-1;s=u*u+v*v;}while(s>=1||s===0);
+  return u*Math.sqrt(-2*Math.log(s)/s);
+}
 function mc(start,w,ret,vol,yrs,inherit,inflowArr=[],runs=1200){
   let ok=0;
+  // 로그정규분포 기반 수익률: 실제 자산 수익률의 특성 반영
+  const mu=(ret/100)-0.5*Math.pow(vol/100,2); // 로그정규 평균 조정
+  const sigma=vol/100;
   for(let i=0;i<runs;i++){
     let b=start,alive=true;
     for(let y=1;y<=yrs;y++){
-      const r=ret+(Math.random()*2-1)*vol*1.5;
+      // 로그정규분포: e^(mu+sigma*Z) - 1 (Z~N(0,1))
+      const z=randNorm();
+      const r=(Math.exp(mu+sigma*z)-1)*100;
       b=b*(1+r/100)-w[y-1];
       if(inflowArr[y-1]) b+=inflowArr[y-1];
       if(b<0){alive=false;break;}
@@ -936,11 +1059,20 @@ function update(){
   $('l-buffer').textContent=buf+'년';$('l-infl').textContent=infl.toFixed(1)+'%';$('l-inherit').textContent=fmtW(inherit);
   // (사망 시점 슬라이더 제거됨 — 기대수명 기반 자동 계산)
 
-  if(portMode==='simple'){$('l-ret-s').textContent=+$('ret-simple').value+'%';$('l-vol-s').textContent=+$('vol-simple').value+'%';}
+  if(portMode==='simple'){
+    $('l-ret-s').textContent=+$('ret-simple').value+'%';
+    $('l-vol-s').textContent=+$('vol-simple').value+'%';
+    $('l-ret-r').textContent=+$('ret-retire').value+'%';
+    $('l-vol-r').textContent=+$('vol-retire').value+'%';
+  }
   if(portMode==='detail') $('l-corr').textContent=+$('corr').value;
 
-  const{ret,vol}=getPortParams();
-  $('port-ret-out').textContent=ret.toFixed(1)+'%';$('port-vol-out').textContent=vol.toFixed(1)+'%';$('port-real-out').textContent=Math.max(0,ret-infl).toFixed(1)+'%';
+  const{ret:retAccum,vol:volAccum}=getPortParams('accum');
+  const{ret,vol}=getPortParams('retire');
+  $('port-ret-out').textContent=retAccum.toFixed(1)+'%';
+  $('port-vol-out').textContent=volAccum.toFixed(1)+'%';
+  const retROut=$('port-ret-r-out');if(retROut)retROut.textContent=ret.toFixed(1)+'%';
+  $('port-real-out').textContent=Math.max(0,ret-infl).toFixed(1)+'%';
 
   // 단계 요약
   const activeStages=STAGES.filter(s=>stageState[s.id].on);
@@ -992,7 +1124,16 @@ function update(){
   $('pt-tot').textContent=(hasSp?meP.amt+spP.amt:meP.amt)+'만원';
 
   const ytr=retAge-age;
-  const assetAtRet=assetNow*Math.pow(1+ret/100*0.6,ytr)+saveYr*ytr+(hasSp?spSave*Math.max(0,spRet-spAge):0);
+  // 올바른 복리 공식: 현재자산×(1+적립기수익률)^기간 + 저축액×연금현가계수
+  // 저축액은 매년 말 납입 가정 (연금미래가치: ((1+r)^n - 1) / r)
+  const accumGrowth = Math.pow(1+retAccum/100, ytr);
+  const saveFV = retAccum>0
+    ? saveYr * (accumGrowth - 1) / (retAccum/100)
+    : saveYr * ytr;
+  const spSaveFV = hasSp && spRet>spAge && retAccum>0
+    ? spSave * (Math.pow(1+retAccum/100, spRet-spAge) - 1) / (retAccum/100)
+    : hasSp ? spSave * Math.max(0,spRet-spAge) : 0;
+  const assetAtRet = assetNow * accumGrowth + saveFV + spSaveFV;
 
   // ── 단계별 버퍼 계산 (핵심 수정)
   // 각 단계의 실제 월 인출 필요액 = (월 생활비 - 공적연금 - 현금흐름수입) 기준
@@ -1131,20 +1272,43 @@ function update(){
   $('a-gap').textContent=(gapA>=0?'+':'')+fmtW(Math.abs(gapA));$('a-gap').className='mv '+(gapA>=0?'ok':'danger');$('a-gap-s').textContent=gapA>=0?'충분':'추가 필요';
   renderCFTable('cf-body-a',stagesA,pensionsA,infl,events,retAge);
   const labA=Array.from({length:periodA+1},(_,i)=>i===0?'은퇴':i+'년');
-  cA=drawC('chart-a',[
+  // 시퀀스 리스크 데이터 저장
+  _seqChartData={investable,wA,ret,periodA,inflowArrA};
+  const datasetsA=[
     {label:'낙관',data:deterPath(investable,wA,ret+2,periodA,inflowArrA),borderColor:'#1D9E75',borderWidth:2,pointRadius:0,fill:false,tension:.3},
     {label:'기본',data:deterPath(investable,wA,ret,periodA,inflowArrA),borderColor:'#378ADD',borderWidth:2.5,pointRadius:0,fill:false,tension:.3},
     {label:'비관',data:deterPath(investable,wA,ret-2,periodA,inflowArrA),borderColor:'#D85A30',borderWidth:2,pointRadius:0,fill:false,tension:.3},
-  ],labA,cA);
+  ];
+  if(seqActive){
+    const sign=seqRetV>=0?'+':'';
+    datasetsA.push({
+      label:`${seqStartV}년차~${seqStartV+seqDurV}년차 ${sign}${seqRetV}%`,
+      data:deterPathSeq(investable,wA,ret,periodA,inflowArrA,seqStartV,seqDurV,seqRetV),
+      borderColor:'#A855F7',borderWidth:2.5,
+      borderDash:[6,3],pointRadius:0,fill:false,tension:.3
+    });
+  }
+  cA=drawC('chart-a',datasetsA,labA,cA);
   // 유입 시점 차트 주석
   const inflowYears=inflows.filter(e=>e.age>=retAge&&e.age<retAge+periodA).map(e=>Math.floor(e.age-retAge));
   const inflowNote=inflowYears.length>0?`  |  ★ 자산유입: ${[...new Set(inflowYears)].map(y=>y+'년차').join(', ')}`:'';
   $('note-a').textContent=`▲ ${mePstartY}년차 본인 공적연금`+(hasSp?` · ● ${spPstartY}년차 배우자 공적연금`:'')+inflowNote;
+  const taxNote='<div style="font-size:11px;color:var(--text3);margin-top:8px">⚠️ 세금 미반영: 연금소득세·금융소득세 등은 계산에 포함되지 않습니다. 실제 수령액은 세후 기준으로 별도 확인하세요.</div>';
   let msgA='',clsA='';
-  if(probA>=90&&rateA<=4){clsA='ok';msgA=`<span class="tag tok">안전</span> ${periodA}년 계획에서 인출률 <b>${rateA.toFixed(2)}%</b>, 생존 확률 <b>${probA}%</b> 목표 달성.`+(inflows.length?` 자산 유입 ${inflows.length}건 (합계 ${fmtW(totalInflowFV)}) 반영.`:'');}
-  else if(probA>=70){clsA='warn';msgA=`<span class="tag twarn">주의</span> ${periodA}년 계획 생존 확률 <b>${probA}%</b>. 추가 필요 자산 약 <b>${fmtW(Math.abs(gapA))}</b>.`;}
-  else{clsA='danger';msgA=`<span class="tag tdanger">위험</span> ${periodA}년 고갈 위험(확률 <b>${probA}%</b>). 자산 계획 재검토 필요.`;}
-  $('adv-a').innerHTML=msgA;$('adv-a').className='adv '+clsA;
+  if(probA>=90&&rateA<=4){
+    clsA='ok';
+    msgA=`<span class="tag tok">안전</span> ${periodA}년 계획에서 인출률 <b>${rateA.toFixed(2)}%</b>, 생존 확률 <b>${probA}%</b> 목표 달성.`+(inflows.length?` 자산 유입 ${inflows.length}건 (합계 ${fmtW(totalInflowFV)}) 반영.`:'');
+  } else if(probA>=90&&rateA>4){
+    clsA='ok';
+    msgA=`<span class="tag tok">안전</span> 생존 확률 <b>${probA}%</b> 목표 달성. 인출률 <b>${rateA.toFixed(2)}%</b>는 다소 높으나 수익률이 이를 보완하고 있습니다.`;
+  } else if(probA>=70){
+    clsA='warn';
+    msgA=`<span class="tag twarn">주의</span> ${periodA}년 계획 생존 확률 <b>${probA}%</b>. 추가 필요 자산 약 <b>${fmtW(Math.abs(gapA))}</b>.`;
+  } else {
+    clsA='danger';
+    msgA=`<span class="tag tdanger">위험</span> ${periodA}년 고갈 위험(확률 <b>${probA}%</b>). 자산 계획 재검토 필요.`;
+  }
+  $('adv-a').innerHTML=msgA+taxNote;$('adv-a').className='adv '+clsA;
 
   if(!hasSp){
     // 배우자 없으면 독거 탭 숨김
@@ -1213,9 +1377,16 @@ function update(){
   ],labS,cS);
   $('note-s').textContent=`잔여 ${fmtW(assetAtDeath)} | ${soloName} 홀로 ${soloPeriod}년 | 공적연금 월 ${soloPenAmt}만원`;
   let msgS='',clsS='';
-  if(probS>=90){clsS='ok';msgS=`<span class="tag tok">안전</span> ${soloName} ${soloPeriod}년 생존 확률 <b>${probS}%</b>.`;}
-  else if(probS>=70){clsS='warn';msgS=`<span class="tag twarn">주의</span> ${soloName} 확률 <b>${probS}%</b> (A 대비 <b>${diffS}%p</b>). 유족연금·종신보험 보완 검토.`;}
-  else{clsS='danger';msgS=`<span class="tag tdanger">위험</span> ${soloName} 고갈 위험(확률 <b>${probS}%</b>, A 대비 <b>${diffS}%p</b>). 부족 <b>${fmtW(Math.abs(gapS))}</b>.`;}
+  if(probS>=90){
+    clsS='ok';
+    msgS=`<span class="tag tok">안전</span> ${soloName} ${soloPeriod}년 생존 확률 <b>${probS}%</b>.`;
+  } else if(probS>=70){
+    clsS='warn';
+    msgS=`<span class="tag twarn">주의</span> ${soloName} 확률 <b>${probS}%</b> (부부 대비 <b>${diffS}%p</b>). 유족연금·종신보험 보완 검토.`;
+  } else {
+    clsS='danger';
+    msgS=`<span class="tag tdanger">위험</span> ${soloName} 고갈 위험(확률 <b>${probS}%</b>, 부부 대비 <b>${diffS}%p</b>). 부족 <b>${fmtW(Math.abs(gapS))}</b>.`;
+  }
   $('adv-s').innerHTML=msgS;$('adv-s').className='adv '+clsS;
 
   // A vs 독거 비교
@@ -1230,7 +1401,7 @@ function update(){
 // 이벤트 리스너
 ['s-pension-own','s-pension-survivor','s-pension-etc'].forEach(id=>{const el=$(id);if(el)el.addEventListener('input',update);});
 ['age','retire','asset','save','sp-age','sp-retire','sp-save','me-life','sp-life',
- 'ret-simple','vol-simple','corr','me-base','me-early','me-defer','sp-base','sp-early','sp-defer',
+ 'ret-simple','vol-simple','ret-retire','vol-retire','corr','me-base','me-early','me-defer','sp-base','sp-early','sp-defer',
  'buffer','infl','inherit'
 ].forEach(id=>{const el=$(id);if(el)el.addEventListener('input',update);});
 
