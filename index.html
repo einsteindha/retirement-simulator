@@ -257,12 +257,9 @@ input[type=range]{width:100%;margin-top:2px;accent-color:var(--blue)}
 <div class="phase">
   <div class="pt">4 · 은퇴 자산 포트폴리오</div>
   <div class="ic">
-    <div class="port-tabs">
-      <button class="port-tab active" id="port-tab-simple" onclick="switchPort('simple')">간편 입력<br><span style="font-size:10px;font-weight:400">수익률·변동성 직접 입력</span></button>
-      <button class="port-tab" id="port-tab-detail" onclick="switchPort('detail')">자산군별 상세<br><span style="font-size:10px;font-weight:400">비중·수익률·변동성 각각 입력</span></button>
-    </div>
-    <div class="port-panel active" id="port-panel-simple">
-      <div class="sn" style="margin-bottom:9px">CFP 상담 결과 또는 본인 추정치를 직접 입력하세요. 토스·뱅크샐러드 등 마이데이터 앱에서 전체 금융자산을 확인한 후 입력하시면 더 정확합니다.</div>
+
+    <div id="port-panel-simple">
+      <div class="sn" style="margin-bottom:9px">Portfolio Visualizer 등 백테스트 도구로 본인 포트폴리오의 과거 수익률·변동성을 확인한 후 입력하세요. CFP 상담 결과값을 입력해도 됩니다.</div>
       <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:6px">은퇴 전 (적립기) — 자산 성장 추산에 사용</div>
       <div class="g2" style="margin-bottom:12px">
         <div class="ic"><div class="il">기대수익률 <span class="iv" id="l-ret-s">7.0%</span></div><input type="range" id="ret-simple" min="1" max="15" step="0.5" value="7"></div>
@@ -275,8 +272,6 @@ input[type=range]{width:100%;margin-top:2px;accent-color:var(--blue)}
       </div>
       <div class="sn" style="margin-top:8px">은퇴 후에는 인출기 특성상 적립기보다 보수적인 수익률·변동성을 설정하는 것이 일반적입니다.</div>
     </div>
-    <div class="port-panel" id="port-panel-detail">
-      <div class="sn" style="margin-bottom:9px">실제 계좌를 보며 자산군별로 입력하세요. 비중 합계 = 100%.</div>
       <div class="asset-header"><span>자산군</span><span>비중(%)</span><span>기대수익률(%)</span><span>변동성(%)</span></div>
       <div id="asset-rows"></div>
       <div class="err" id="err-port"></div>
@@ -540,7 +535,7 @@ input[type=range]{width:100%;margin-top:2px;accent-color:var(--blue)}
 <script>
 const $=id=>document.getElementById(id);
 let cA=null,cB=null,cS=null;
-let hasSp=false,meMode='normal',spMode='normal',portMode='simple';
+let hasSp=false,meMode='normal',spMode='normal';
 let eventId=0,cashflowId=0,fixedPensionId=0,inflowId=0;
 let events=[],cashflows=[],fixedPensions=[],inflows=[];
 
@@ -753,34 +748,12 @@ function getExtraIncome(yearIdx, retireAge){
 }
 
 // ── 포트폴리오
-const ASSET_DEFAULTS=[{name:'국내주식',ret:7.0,vol:18.0,wt:15},{name:'해외주식',ret:9.0,vol:16.0,wt:25},{name:'국내채권',ret:3.5,vol:4.0,wt:20},{name:'해외채권',ret:4.5,vol:6.0,wt:15},{name:'대안투자',ret:5.5,vol:8.0,wt:10},{name:'현금·단기',ret:2.5,vol:0.5,wt:15}];
-let assetRows=[...ASSET_DEFAULTS.map(a=>({...a}))];
-function buildAssetRows(){
-  const c=$('asset-rows');c.innerHTML='';
-  assetRows.forEach((a,i)=>{
-    const r=document.createElement('div');r.className='asset-row';
-    r.innerHTML=`<span class="asset-label">${a.name}</span><input class="asset-input" type="number" min="0" max="100" step="1" value="${a.wt}" oninput="assetIn(${i},'wt',+this.value)"><input class="asset-input" type="number" min="0" max="20" step="0.1" value="${a.ret}" oninput="assetIn(${i},'ret',+this.value)"><input class="asset-input" type="number" min="0" max="50" step="0.1" value="${a.vol}" oninput="assetIn(${i},'vol',+this.value)">`;
-    c.appendChild(r);
-  });
-}
-function assetIn(i,f,v){assetRows[i][f]=v;update();}
+
 function getPortParams(phase='retire'){
   // phase: 'accum'(적립기) or 'retire'(인출기)
-  if(portMode==='simple'){
-    if(phase==='accum') return{ret:+$('ret-simple').value,vol:+$('vol-simple').value};
-    return{ret:+$('ret-retire').value,vol:+$('vol-retire').value};
-  }
-  const sumWt=assetRows.reduce((s,a)=>s+a.wt,0);
-  if(Math.abs(sumWt-100)>0.5) return{ret:phase==='accum'?7:5,vol:phase==='accum'?14:10};
-  const wts=assetRows.map(a=>a.wt/100),rets=assetRows.map(a=>a.ret),vols=assetRows.map(a=>a.vol),corr=+$('corr').value;
-  const portRet=wts.reduce((s,w,i)=>s+w*rets[i],0);
-  let pv=0;
-  for(let i=0;i<wts.length;i++)for(let j=0;j<wts.length;j++){const rij=i===j?1:corr;pv+=wts[i]*wts[j]*vols[i]*vols[j]*rij/100;}
-  const portVol=Math.sqrt(pv)*10;
-  // 상세탭: 인출기는 동일 입력값 사용 (사용자가 직접 구분해서 입력)
-  return{ret:portRet,vol:portVol};
+  if(phase==='accum') return{ret:+$('ret-simple').value,vol:+$('vol-simple').value};
+  return{ret:+$('ret-retire').value,vol:+$('vol-retire').value};
 }
-function switchPort(m){portMode=m;['simple','detail'].forEach(x=>{$('port-tab-'+x).classList.toggle('active',x===m);$('port-panel-'+x).classList.toggle('active',x===m);});update();}
 
 // ── 공적연금
 function calcP(base,mode,ea,da){
@@ -1059,13 +1032,10 @@ function update(){
   $('l-buffer').textContent=buf+'년';$('l-infl').textContent=infl.toFixed(1)+'%';$('l-inherit').textContent=fmtW(inherit);
   // (사망 시점 슬라이더 제거됨 — 기대수명 기반 자동 계산)
 
-  if(portMode==='simple'){
-    $('l-ret-s').textContent=+$('ret-simple').value+'%';
-    $('l-vol-s').textContent=+$('vol-simple').value+'%';
-    $('l-ret-r').textContent=+$('ret-retire').value+'%';
-    $('l-vol-r').textContent=+$('vol-retire').value+'%';
-  }
-  if(portMode==='detail') $('l-corr').textContent=+$('corr').value;
+  $('l-ret-s').textContent=+$('ret-simple').value+'%';
+  $('l-vol-s').textContent=+$('vol-simple').value+'%';
+  $('l-ret-r').textContent=+$('ret-retire').value+'%';
+  $('l-vol-r').textContent=+$('vol-retire').value+'%';
 
   const{ret:retAccum,vol:volAccum}=getPortParams('accum');
   const{ret,vol}=getPortParams('retire');
@@ -1401,13 +1371,12 @@ function update(){
 // 이벤트 리스너
 ['s-pension-own','s-pension-survivor','s-pension-etc'].forEach(id=>{const el=$(id);if(el)el.addEventListener('input',update);});
 ['age','retire','asset','save','sp-age','sp-retire','sp-save','me-life','sp-life',
- 'ret-simple','vol-simple','ret-retire','vol-retire','corr','me-base','me-early','me-defer','sp-base','sp-early','sp-defer',
+ 'ret-simple','vol-simple','ret-retire','vol-retire','me-base','me-early','me-defer','sp-base','sp-early','sp-defer',
  'buffer','infl','inherit'
 ].forEach(id=>{const el=$(id);if(el)el.addEventListener('input',update);});
 
 // 초기화
 buildStageGrid();
-buildAssetRows();
 renderEvents();
 renderInflows();
 renderCashflows();
