@@ -17,19 +17,19 @@
   :root{--bg:#1a1b26;--bg2:#24253a;--bg3:#2d2e45;--text:#e8eaf6;--text2:#9fa8c0;--text3:#6b7394;--border:rgba(255,255,255,.08);--border2:rgba(255,255,255,.15);}
 }
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans KR',sans-serif;background:var(--bg3);color:var(--text);font-size:14px;line-height:1.6;display:flex;flex-direction:column;height:100vh;overflow:hidden;margin:0}
-.header{background:#0D1B3E;color:#fff;padding:18px 24px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+html,body{height:100%;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans KR',sans-serif;background:var(--bg3);color:var(--text);font-size:14px;line-height:1.6}
+.header{height:70px;background:#0D1B3E;color:#fff;padding:0 24px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-shrink:0}
 .header-title{font-size:17px;font-weight:700;color:#E8C97E}
 .header-sub{font-size:12px;color:#B0BAD4;margin-top:2px}
 .header-badge{background:#C9A84C;color:#0D1B3E;font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px;white-space:nowrap}
-.header{flex-shrink:0}
-.container{flex:1;display:flex;min-height:0}
-.split-left{flex:0 0 55%;min-width:0;padding:20px 24px 40px;overflow-y:auto;overflow-x:hidden}
-.split-right{flex:0 0 45%;min-width:0;padding:20px 24px 40px;overflow-y:auto;overflow-x:hidden;border-left:1px solid var(--border);background:var(--bg3)}
+.container{display:flex;height:calc(100% - 70px)}
+.split-left{flex:0 0 55%;height:100%;overflow-y:auto;padding:20px 24px 60px}
+.split-right{flex:0 0 45%;height:100%;overflow-y:auto;padding:20px 24px 60px;border-left:1px solid var(--border);background:var(--bg3)}
+.footer{display:none}
 @media(max-width:900px){
-  body{height:auto;overflow:visible}
-  .container{flex-direction:column}
-  .split-left,.split-right{flex:none;width:100%;padding:16px 14px 24px;overflow-x:hidden}
+  html,body{overflow:auto}
+  .container{flex-direction:column;height:auto}
+  .split-left,.split-right{flex:none;width:100%;height:auto;overflow-y:visible}
   .split-right{border-left:none;border-top:2px solid var(--border)}
 }
 /* 시나리오 탭 — 밝은 배경에서 텍스트 가시성 */
@@ -270,7 +270,6 @@ input[type=range]{width:100%;margin-top:2px;accent-color:var(--blue)}
       </div>
       <div class="sn" style="margin-top:8px">은퇴 후에는 인출기 특성상 적립기보다 보수적인 수익률·변동성을 설정하는 것이 일반적입니다.</div>
     </div>
-    </div>
     <div class="port-result" style="grid-template-columns:repeat(auto-fit,minmax(130px,1fr))">
       <div class="pr-item"><div class="pr-label">적립기 수익률</div><div class="pr-val" id="port-ret-out">—</div></div>
       <div class="pr-item"><div class="pr-label">적립기 변동성</div><div class="pr-val" id="port-vol-out">—</div></div>
@@ -412,7 +411,6 @@ input[type=range]{width:100%;margin-top:2px;accent-color:var(--blue)}
     <div class="sn" style="margin-top:8px">가장 인출 부담이 큰 단계의 버퍼를 보유하면 모든 단계에서 하락장을 버틸 수 있습니다.</div>
   </div>
 </div>
-
 </div><!-- /split-left -->
 
 <!-- RIGHT: 결과 영역 -->
@@ -514,8 +512,6 @@ input[type=range]{width:100%;margin-top:2px;accent-color:var(--blue)}
   <div class="cmp3-sep"></div>
   <div class="cmp3-col"><div class="cmp3-ttl" id="cmp-s-ttl">독거 시나리오</div><div class="cmp3-row"><span class="cmp3-lbl">생존 확률</span><span class="cmp3-val" id="cmp-s-p">—</span></div><div class="cmp3-row"><span class="cmp3-lbl">인출률</span><span class="cmp3-val" id="cmp-s-r">—</span></div><div class="cmp3-period" id="cmp-s-period">—</div></div>
   <div class="cmp3-msg" id="cmp3-msg"></div>
-</div>
-
 </div><!-- /split-right -->
 </div><!-- /container -->
 <div class="footer">
