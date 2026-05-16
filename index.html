@@ -185,9 +185,9 @@ input[type=range]{width:100%;margin-top:2px;accent-color:var(--blue)}
 <div class="header">
   <div>
     <div class="header-title">은퇴 안전 인출 계산기</div>
-    <div class="header-sub">정원준 CFP · 서울리(Re)테크 재무상담 · 몬테카를로 시뮬레이션 기반</div>
+    <div class="header-sub">정원준 CFP · 몬테카를로 시뮬레이션 기반</div>
   </div>
-  <span class="header-badge">교육용 참고자료</span>
+  <span class="header-badge">상담용 참고자료</span>
 </div>
 <div class="container">
 <!-- LEFT: 입력 영역 -->
@@ -515,8 +515,8 @@ input[type=range]{width:100%;margin-top:2px;accent-color:var(--blue)}
 </div><!-- /split-right -->
 </div><!-- /container -->
 <div class="footer">
-  ⚠️ 본 계산기는 교육 목적의 참고자료입니다. 실제 재무 의사결정은 반드시 공인 재무설계사(CFP)와 상담하세요.<br>
-  정원준 CFP · 서울리(Re)테크 · 몬테카를로 시뮬레이션 1,200회 기반
+  ⚠️ 본 계산기는 상담용 참고자료입니다. 실제 재무 의사결정은 반드시 공인 재무설계사(CFP)와 상담하세요.<br>
+  정원준 CFP · 몬테카를로 시뮬레이션 1,200회 기반
 </div>
 
 <script>
@@ -1149,7 +1149,6 @@ function update(){
   $('l-me-base').textContent=meBase+'만원';$('l-me-e').textContent=meEA+'세';$('l-me-d').textContent=meDA+'세';
   $('l-sp-base').textContent=spBase+'만원';$('l-sp-e').textContent=spEA+'세';$('l-sp-d').textContent=spDA+'세';
   $('l-buffer').textContent=buf+'년';$('l-infl').textContent=infl.toFixed(1)+'%';$('l-inherit').textContent=fmtW(inherit);
-  // (사망 시점 슬라이더 제거됨 — 기대수명 기반 자동 계산)
 
   $('l-ret-s').textContent=+$('ret-simple').value+'%';
   $('l-vol-s').textContent=+$('vol-simple').value+'%';
@@ -1225,38 +1224,28 @@ function update(){
   const assetAtRet = assetNow * accumGrowth + saveFV + spSaveFV;
 
   // ── 단계별 버퍼 계산 (핵심 수정)
-  // 각 단계의 실제 월 인출 필요액 = (월 생활비 - 공적연금 - 현금흐름수입) 기준
-  // 가장 부담이 큰 단계의 버퍼를 최대값으로 사용
   const mePstartY=Math.max(0,meP.sa-retAge);
   const spPstartY=hasSp?Math.max(0,spP.sa-retAge):999;
   const pensionsA=hasSp?[{startY:mePstartY,amt:meP.amt},{startY:spPstartY,amt:spP.amt}]:[{startY:mePstartY,amt:meP.amt}];
   const stagesA=STAGES.filter(s=>!s.solo);
 
-  // ── 시점 기반 소득공백기 구간 계산 (버퍼 + 테이블)
-  // 4개 시점: 본인은퇴(T_meRet), 배우자은퇴(T_spRet), 본인연금(T_meP), 배우자연금(T_spP)
-  // → 정렬 후 중복 제거 → 구간 자동 생성 → 각 구간별 수령 연금 정확히 반영
   function calcBufBySegments(retireAge, meRetireAge, spRetireAge, meP, spP, bufYrs, living, infl){
     const bufMonths = bufYrs * 12;
 
-    // 본인 은퇴 기준 연도로 환산
     const T = {
-      meRet : 0,                                    // 본인 은퇴 = 0년차 기준
-      spRet : hasSp ? spRetireAge - retireAge : null, // 배우자 은퇴
-      mePen : meP.sa - retireAge,                   // 본인 연금 개시
-      spPen : hasSp ? spP.sa - retireAge : null,    // 배우자 연금 개시
+      meRet : 0,
+      spRet : hasSp ? spRetireAge - retireAge : null,
+      mePen : meP.sa - retireAge,
+      spPen : hasSp ? spP.sa - retireAge : null,
     };
 
-    // 구간 경계 시점 수집
-    // 0 ~ 마지막연금개시 구간을 모두 커버 (공백기 0이어도 "연금 수령 중" 구간 1개 생성)
     const milestones = new Set([0]);
     if(T.spRet !== null && T.spRet > 0) milestones.add(T.spRet);
     if(T.mePen > 0) milestones.add(T.mePen);
     if(T.spPen !== null && T.spPen > 0) milestones.add(T.spPen);
-    // 마지막 연금 개시 이후 구간도 포함 (연금 수령 중 생활비 버퍼)
     const lastPen = Math.max(T.mePen, T.spPen !== null ? T.spPen : 0);
-    milestones.add(lastPen + 1); // 마지막 연금 개시 후 구간 시작점
+    milestones.add(lastPen + 1);
 
-    // 정렬 후 구간 생성
     const points = [...milestones].sort((a,b)=>a-b);
     const segments = [];
     for(let i=0; i<points.length-1; i++){
@@ -1270,16 +1259,11 @@ function update(){
       const midY = (seg.from + seg.to) / 2;
       const ageAtMid = retireAge + midY;
 
-      // 해당 구간에서 수령 중인 연금 계산
       let pension = 0;
-      // 본인 연금: midY >= mePen 이면 수령
       if(midY >= T.mePen) pension += meP.amt;
-      // 배우자 연금: midY >= spPen 이면 수령 (배우자 있을 때만)
       if(hasSp && T.spPen !== null && midY >= T.spPen) pension += spP.amt;
 
-      // 구간 설명 레이블
       let desc = '';
-      const bothRetired = !hasSp || (seg.from >= Math.max(0, T.spRet||0));
       const meHasPen = midY >= T.mePen;
       const spHasPen = hasSp && T.spPen !== null && midY >= T.spPen;
 
@@ -1293,7 +1277,6 @@ function update(){
         desc = hasSp ? '부부 모두 공적연금 수령 중' : '본인 공적연금 수령 중';
       }
 
-      // 현금흐름·정액연금 추가 수입
       let extraIncome = 0;
       cashflows.forEach(cf => { const end=cf.endAge>0?cf.endAge:200; if(ageAtMid>=cf.startAge&&ageAtMid<end) extraIncome+=cf.amt; });
       fixedPensions.forEach(fp => { const end=fp.endAge>0?fp.endAge:200; if(ageAtMid>=fp.startAge&&ageAtMid<end) extraIncome+=fp.amt; });
@@ -1314,14 +1297,12 @@ function update(){
     return { maxBuf, rows };
   }
 
-  // 버퍼 계산에 쓸 생활비: 첫 활성 부부 단계의 월 생활비 기준
   const coupleStagesActive = STAGES.filter(s=>!s.solo&&stageState[s.id].on);
   const bufLiving = coupleStagesActive.length ? stageState[coupleStagesActive[0].id].mon : 250;
 
   const { maxBuf, rows: bufRows } = calcBufBySegments(retAge, retAge, hasSp?+$('sp-retire').value:retAge, meP, spP, buf, bufLiving, infl);
   const bufAmt = maxBuf;
 
-  // 버퍼 테이블 렌더
   const bufBody = $('buf-body');
   bufBody.innerHTML = '';
   bufRows.forEach(r => {
@@ -1360,24 +1341,17 @@ function update(){
   $('a-buf').textContent=fmtW(bufAmt);$('a-evt').textContent=fmtW(totalEvtFV);
   $('a-gap').textContent=(gapA>=0?'+':'')+fmtW(Math.abs(gapA));$('a-gap').className='mv '+(gapA>=0?'ok':'danger');$('a-gap-s').textContent=gapA>=0?'충분':'추가 필요';
   renderCFTable('cf-body-a',stagesA,pensionsA,infl,events,retAge);
-  // 동반 차트: 배우자 있고 독거기간 있으면 선행사망 시점까지만 표시
-  // 그래야 독거 차트와 연속성 보장
   const chartPeriodA = (hasSp && soloPeriod>0) ? Math.min(soloDeathY, periodA) : periodA;
   const labA=Array.from({length:chartPeriodA+1},(_,i)=>i===0?'은퇴':i+'년');
-  // 시퀀스 리스크 데이터 저장
   _seqChartData={investable,wA,ret,vol,periodA,inflowArrA};
-  // 몬테카를로 팬 차트: 1,200개 경로 → 10th/50th/90th percentile
   const fanA = mcPaths(investable,wA,ret,vol,periodA,inflowArrA);
-  // 전체 경로 배열 (독거 시작점 연결용 — p10/p50/p90 각 soloDeathY 값)
   const pathOptimA = fanA.p90;
   const pathBaseA  = fanA.p50;
   const pathPessA  = fanA.p10;
-  // 동반 차트는 chartPeriodA까지만 슬라이스
   const p90A = fanA.p90.slice(0, chartPeriodA+1);
   const p50A = fanA.p50.slice(0, chartPeriodA+1);
   const p10A = fanA.p10.slice(0, chartPeriodA+1);
   cA = drawFanChart('chart-a', p10A, p50A, p90A, labA, cA, '#378ADD');
-  // 시퀀스 리스크 선은 별도 추가
   if(seqActive && cA){
     const sign=seqRetV>=0?'+':'';
     const seqFull=deterPathSeq(investable,wA,ret,periodA,inflowArrA,seqStartV,seqDurV,seqRetV);
@@ -1389,7 +1363,6 @@ function update(){
     });
     cA.update('none');
   }
-  // 유입 시점 차트 주석
   const inflowYears=inflows.filter(e=>e.age>=retAge&&e.age<retAge+periodA).map(e=>Math.floor(e.age-retAge));
   const inflowNote=inflowYears.length>0?`  |  ★ 자산유입: ${[...new Set(inflowYears)].map(y=>y+'년차').join(', ')}`:'';
   $('note-a').textContent=`▲ ${mePstartY}년차 본인 공적연금`+(hasSp?` · ● ${spPstartY}년차 배우자 공적연금`:'')+inflowNote;
@@ -1414,15 +1387,13 @@ function update(){
   $('adv-a').innerHTML=msgA+probNote+taxNote;$('adv-a').className='adv '+clsA;
 
   if(!hasSp){
-    // 배우자 없으면 독거 탭 숨김
     const tabS=$('tab-s');if(tabS)tabS.style.display='none';
     return;
   }
 
-  // ── 독거 시나리오 (기대수명 기준 자동 결정)
+  // ── 독거 시나리오
   const assetAtDeath=pathBaseA[Math.min(soloDeathY,periodA)];
   const sP=getSoloPension();
-  // 섹션6 레이블 — soloWho 기준 동적 업데이트
   const soloLabel = soloWho==='sp'?'배우자':'본인';
   const firstDiedLabel = soloWho==='sp'?'본인':'배우자';
   const whoDesc=$('solo-pension-who-desc');
@@ -1438,7 +1409,6 @@ function update(){
   const stagesSolo=STAGES.filter(s=>s.solo);
   const wS=buildW(stagesSolo,[{startY:0,amt:sP.total}],soloPeriod,infl,[],retAge+soloDeathY);
   const rateS=assetAtDeath>0?(wS[0]/assetAtDeath)*100:0;
-  // mcChained: 동반 기간 시뮬레이션에서 이어서 독거 기간 계산
   const probS=Math.round(mcChained(investable,wA,Math.min(soloDeathY,periodA),wS,soloPeriod,ret,vol,inherit,inflowArrA)*100);
   const avgWS=wS.reduce((a,b)=>a+b,0)/wS.length;
   const pvFS=(1-Math.pow(1+netRet/100,-soloPeriod))/(netRet/100);
@@ -1447,7 +1417,6 @@ function update(){
   const monS=Math.round(assetAtDeath*(rateS/100)/12+sP.total);
   const diffS=probS-probA;
 
-  // 독거자 정보
   const isSpSolo = soloWho==='sp';
   const soloLife = isSpSolo?spLife:meLife;
   const soloName = isSpSolo?'배우자':'본인';
@@ -1455,7 +1424,6 @@ function update(){
   const soloDeathAge = retAge+soloDeathY;
   const soloPenAmt = sP.total;
 
-  // UI 업데이트
   $('sh-s-title').textContent=`독거 시나리오 — ${firstDied} 먼저 사망 → ${soloName} 홀로`;
   $('sh-s-desc').textContent=`${firstDied} ${soloDeathAge}세 사망 (기대수명 기준). ${soloName}이 ${soloLife}세까지 ${soloPeriod}년. 공적연금 월 ${soloPenAmt}만원.`;
   $('s-pension-label').textContent=`${soloName} 수령 공적연금 (섹션 6 입력값)`;
@@ -1473,16 +1441,14 @@ function update(){
   $('s-gap').textContent=(gapS>=0?'+':'')+fmtW(Math.abs(gapS));$('s-gap').className='mv '+(gapS>=0?'ok':'danger');$('s-gap-s').textContent=gapS>=0?`${soloName} 충분`:`${soloName} 부족`;
   renderCFTable('cf-body-s',stagesSolo,[{startY:0,amt:sP.total}],infl,[],retAge+soloDeathY);
   const labS=Array.from({length:soloPeriod+1},(_,i)=>i===0?`사망(${soloDeathAge}세)`:'+'+i+'년');
-  // 동반 p10/p50/p90의 dY 시점 값에서 각각 독거 팬 차트 이어서 계산
   const dY = Math.min(soloDeathY, periodA);
   const fanS90 = mcPaths(pathOptimA[dY], wS, ret, vol, soloPeriod);
   const fanS50 = mcPaths(pathBaseA[dY],  wS, ret, vol, soloPeriod);
   const fanS10 = mcPaths(pathPessA[dY],  wS, ret, vol, soloPeriod);
-  // 독거 팬 차트: 각 시작점의 중앙값을 p90/p50/p10으로 사용
   cS = drawFanChart('chart-s',
-    fanS10.p10,   // 비관 시작의 하위 10%
-    fanS50.p50,   // 중앙 시작의 중앙값
-    fanS90.p90,   // 낙관 시작의 상위 10%
+    fanS10.p10,
+    fanS50.p50,
+    fanS90.p90,
     labS, cS, '#BA7517'
   );
   $('note-s').textContent=`잔여 ${fmtW(assetAtDeath)} | ${soloName} 홀로 ${soloPeriod}년 | 공적연금 월 ${soloPenAmt}만원`;
@@ -1501,7 +1467,6 @@ function update(){
   }
   $('adv-s').innerHTML=msgS+probNoteS;$('adv-s').className='adv '+clsS;
 
-  // A vs 독거 비교
   $('cmp-a-p').textContent=probA+'%';$('cmp-a-p').style.color=probColor(probA);$('cmp-a-r').textContent=rateA.toFixed(2)+'%';$('cmp-a-period').textContent=periodA+'년';
   $('cmp-s-ttl').textContent=`독거 (${soloName} 홀로)`;
   $('cmp-s-p').textContent=probS+'%';$('cmp-s-p').style.color=probColor(probS);$('cmp-s-r').textContent=rateS.toFixed(2)+'%';$('cmp-s-period').textContent=`${soloName} 잔여 ${soloPeriod}년`;
@@ -1511,8 +1476,6 @@ function update(){
 }
 
 // 이벤트 리스너
-// 디바운싱: mcPaths 1,200회 시뮬레이션을 슬라이더마다 즉시 실행하면 버벅임
-// 150ms 후 마지막 입력만 실행
 let _updateTimer=null;
 function debouncedUpdate(){clearTimeout(_updateTimer);_updateTimer=setTimeout(update,150);}
 
