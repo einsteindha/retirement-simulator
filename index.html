@@ -431,6 +431,7 @@ input[type=range]{width:100%;margin-top:2px;accent-color:var(--blue)}
     <div class="met"><div class="ml">자산 생존 확률</div><div class="mv" id="a-prob">—</div><div class="ms" id="a-prob-s">—</div></div>
     <div class="met"><div class="ml">현금 버퍼</div><div class="mv" id="a-buf">—</div><div class="ms">하락장 방어</div></div>
     <div class="met"><div class="ml">이벤트 비용 합계</div><div class="mv" id="a-evt">—</div><div class="ms">물가 반영 미래가치</div></div>
+    <div class="met"><div class="ml">상속 목표 (종료 시점)</div><div class="mv" id="a-inherit">—</div><div class="ms" id="a-inherit-s">—</div></div>
     <div class="met"><div class="ml">자산 부족/여유</div><div class="mv" id="a-gap">—</div><div class="ms" id="a-gap-s">—</div></div>
   </div>
   <div class="cc">
@@ -445,6 +446,7 @@ input[type=range]{width:100%;margin-top:2px;accent-color:var(--blue)}
         <div class="li"><div class="ld" style="background:#378ADD"></div>중앙값</div>
         <div class="li"><div class="ld" style="background:rgba(55,138,221,0.35)"></div>하위 10%</div>
         <div class="li seq-leg" id="seq-leg" style="display:none"><div class="ld" style="background:#A855F7"></div>수익률 시나리오</div>
+        <div class="li" id="inherit-leg-a" style="display:none"><div class="ld" style="background:#8B5CF6;border-top:2px dashed #8B5CF6;height:0"></div>상속 목표</div>
       </div>
     </div>
     <!-- 시퀀스 리스크 입력 -->
@@ -500,7 +502,8 @@ input[type=range]{width:100%;margin-top:2px;accent-color:var(--blue)}
     <div style="overflow-x:auto"><table class="cf-table"><thead><tr><th>단계</th><th>기간</th><th id="cf-s-age-th">나이</th><th>월 생활비</th><th id="cf-s-pen-th">공적연금</th><th>월 인출 필요</th></tr></thead><tbody id="cf-body-s"></tbody></table></div>
   </div>
   <div class="cc">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:7px"><span style="font-size:13px;font-weight:600" id="chart-s-title">독거자 자산</span><div class="leg"><div class="li"><div class="ld" style="background:rgba(186,117,23,0.35)"></div>상위 10%</div><div class="li"><div class="ld" style="background:#BA7517"></div>중앙값</div><div class="li"><div class="ld" style="background:rgba(186,117,23,0.35)"></div>하위 10%</div></div></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:7px"><span style="font-size:13px;font-weight:600" id="chart-s-title">독거자 자산</span><div class="leg"><div class="li"><div class="ld" style="background:rgba(186,117,23,0.35)"></div>상위 10%</div><div class="li"><div class="ld" style="background:#BA7517"></div>중앙값</div><div class="li"><div class="ld" style="background:rgba(186,117,23,0.35)"></div>하위 10%</div>
+        <div class="li" id="inherit-leg-s" style="display:none"><div class="ld" style="background:#8B5CF6;border-top:2px dashed #8B5CF6;height:0"></div>상속 목표</div></div></div>
     <div style="position:relative;width:100%;height:240px"><canvas id="chart-s" role="img" aria-label="독거 시나리오 자산 잔액"></canvas></div>
     <div style="font-size:11px;color:var(--text3);margin-top:6px" id="note-s"></div>
   </div>
@@ -528,7 +531,7 @@ let events=[],cashflows=[],fixedPensions=[],inflows=[];
 
 // ── 인생 단계 정의 (4,5번 수정 반영)
 const STAGES=[
-  {id:'active',    label:'활동기',   color:'#378ADD',bg:'#EBF3FF',tc:'#185FA5',desc:'건강하게 활발히 활동하는 시기 (공적연금 수령 전후 자동 반영)',defaultYrs:15,defaultMon:300,solo:false,who:null},
+  {id:'active',    label:'활동기',   color:'#378ADD',bg:'#EBF3FF',tc:'#185FA5',desc:'건강하게 활발히 활동하는 시기 (공적연금 수령 전후 자동 반영)',defaultYrs:12,defaultMon:300,solo:false,who:null},
   {id:'recall',    label:'회상기',   color:'#8B5CF6',bg:'#F3EFFE',tc:'#5B21B6',desc:'활동이 줄고 집에서 보내는 시간이 늘어나는 시기',defaultYrs:8,defaultMon:240,solo:false,who:null},
   {id:'care',      label:'간병기',   color:'#BA7517',bg:'#FFF3CD',tc:'#7A5800',desc:'의료·간병 비용 증가 시기',defaultYrs:3,defaultMon:320,solo:false,who:null},
   {id:'solo_active',label:'독거 활동기',color:'#1D9E75',bg:'#E1F5EE',tc:'#0F6E56',desc:'홀로 남아 활동하는 시기 (독거 공적연금 자동 반영)',defaultYrs:10,defaultMon:200,solo:true,who:null},
@@ -537,7 +540,7 @@ const STAGES=[
 let stageState={};
 STAGES.forEach(s=>{
   stageState[s.id]={
-    on: s.solo ? hasSp : ['active','recall','care'].includes(s.id),
+    on: s.solo ? hasSp : ['active','recall','care'].includes(s.id) ? true : false,
     yrs:s.defaultYrs,
     mon:s.defaultMon
   };
@@ -545,7 +548,18 @@ STAGES.forEach(s=>{
 
 function buildStageGrid(){
   const grid=$('stage-grid');grid.innerHTML='';
-  STAGES.forEach(s=>{
+
+  // 부부 동반 섹션 헤더
+  const coupleHeader=document.createElement('div');
+  coupleHeader.id='stage-header-couple';
+  coupleHeader.innerHTML=`<div style="display:flex;align-items:center;gap:8px;padding:7px 12px;background:#EBF3FF;border:1px solid #B5D4F4;border-radius:var(--radius-lg);margin-bottom:7px">
+    <span style="font-size:12px;font-weight:700;color:#185FA5">👫 동반 인출기</span>
+    <span style="font-size:11px;color:#185FA5" id="stage-couple-period">—</span>
+    <span style="margin-left:auto;font-size:11px;color:#378ADD;font-weight:600" id="stage-couple-rem"></span>
+  </div>`;
+  grid.appendChild(coupleHeader);
+
+  STAGES.filter(s=>!s.solo).forEach(s=>{
     const st=stageState[s.id];
     const row=document.createElement('div');row.className='stage-row';
     row.innerHTML=`
@@ -560,7 +574,45 @@ function buildStageGrid(){
       <div class="stage-body ${st.on?'open':''}" id="sbody-${s.id}">
         <div class="stage-inputs">
           <div class="ic">
-            <div class="il">기간 <span class="iv" id="styr-lbl-${s.id}">${st.yrs}년</span></div>
+            <div class="il">기간 <span style="display:flex;align-items:baseline;gap:5px"><span class="iv" id="styr-lbl-${s.id}">${st.yrs}년</span><span id="styr-rem-${s.id}" style="font-size:11px;font-weight:400;color:var(--text3)"></span></span></div>
+            <input type="range" id="styr-${s.id}" min="0" max="65" step="1" value="${st.yrs}" oninput="stageYrInput('${s.id}',this.value)">
+          </div>
+          <div class="ic">
+            <div class="il">월 생활비 <span class="iv" id="stmon-lbl-${s.id}">${st.mon}만원</span></div>
+            <input type="range" id="stmon-${s.id}" min="50" max="3000" step="10" value="${st.mon}" oninput="stageMonInput('${s.id}',this.value)">
+          </div>
+        </div>
+      </div>`;
+    grid.appendChild(row);
+  });
+
+  // 독거 섹션 헤더 (배우자 있을 때만 표시)
+  const soloHeader=document.createElement('div');
+  soloHeader.id='stage-header-solo';
+  soloHeader.style.display='none';
+  soloHeader.innerHTML=`<div style="display:flex;align-items:center;gap:8px;padding:7px 12px;background:#FAECE7;border:1px solid #F5C4B3;border-radius:var(--radius-lg);margin-top:12px;margin-bottom:7px">
+    <span style="font-size:12px;font-weight:700;color:#993C1D">🧍 독거 인출기</span>
+    <span style="font-size:11px;color:#993C1D" id="stage-solo-period">—</span>
+    <span style="margin-left:auto;font-size:11px;color:#D85A30;font-weight:600" id="stage-solo-rem"></span>
+  </div>`;
+  grid.appendChild(soloHeader);
+
+  STAGES.filter(s=>s.solo).forEach(s=>{
+    const st=stageState[s.id];
+    const row=document.createElement('div');row.className='stage-row';
+    row.innerHTML=`
+      <div class="stage-header">
+        <span class="stage-badge" style="background:${s.bg};color:${s.tc}">${s.label}</span>
+        <span style="font-size:11px;color:var(--text2)">${s.desc}</span>
+        <div class="stage-toggle" onclick="toggleStage('${s.id}')">
+          <div class="mini-tr ${st.on?'on':''}" id="str-${s.id}"><div class="mini-th"></div></div>
+          <span id="stlbl-${s.id}">${st.on?'ON':'OFF'}</span>
+        </div>
+      </div>
+      <div class="stage-body ${st.on?'open':''}" id="sbody-${s.id}">
+        <div class="stage-inputs">
+          <div class="ic">
+            <div class="il">기간 <span style="display:flex;align-items:baseline;gap:5px"><span class="iv" id="styr-lbl-${s.id}">${st.yrs}년</span><span id="styr-rem-${s.id}" style="font-size:11px;font-weight:400;color:var(--text3)"></span></span></div>
             <input type="range" id="styr-${s.id}" min="0" max="65" step="1" value="${st.yrs}" oninput="stageYrInput('${s.id}',this.value)">
           </div>
           <div class="ic">
@@ -584,50 +636,33 @@ function toggleStage(id){
 function stageYrInput(id,val){stageState[id].yrs=+val;$('styr-lbl-'+id).textContent=val+'년';update();}
 function stageMonInput(id,val){stageState[id].mon=+val;$('stmon-lbl-'+id).textContent=val+'만원';update();}
 
-// 단계 기간 제한 (5번 수정)
+// 단계 기간 제한 — stageState 원본은 수정하지 않고 경고만 표시
 function clampStageYears(retireAge,meLife,spLife){
   const mePeriod=Math.max(1,meLife-retireAge);
   const age=+$('age').value, spAge=+$('sp-age').value;
   const spLifeFromRet=hasSp?Math.max(0,spLife-spAge-(retireAge-age)):0;
   const periodA=hasSp?Math.max(mePeriod,spLifeFromRet):mePeriod;
-  // 독거 기간: 현재 나이 기준 절대 사망 연도로 비교
   let soloPeriod=mePeriod;
   if(hasSp){
-    const age=+$('age').value, spAge=+$('sp-age').value;
     const meDiesAtYear = meLife - age;
     const spDiesAtYear = spLife - spAge;
     soloPeriod = Math.max(0, Math.abs(meDiesAtYear - spDiesAtYear));
   }
 
-  // 부부 단계 합계 제한
+  // 초과 여부는 경고 표시만 (stageState 원본 수정 안 함)
   const coupleStages=STAGES.filter(s=>!s.solo&&stageState[s.id].on);
-  let coupleTotal=coupleStages.reduce((sum,s)=>sum+stageState[s.id].yrs,0);
-  if(coupleTotal>periodA){
-    // 초과분을 마지막 단계에서 깎음
-    let excess=coupleTotal-periodA;
-    for(let i=coupleStages.length-1;i>=0&&excess>0;i--){
-      const s=coupleStages[i];
-      const cut=Math.min(stageState[s.id].yrs,excess);
-      stageState[s.id].yrs-=cut;
-      excess-=cut;
-      const el=$('styr-'+s.id);if(el)el.value=stageState[s.id].yrs;
-      const lbl=$('styr-lbl-'+s.id);if(lbl)lbl.textContent=stageState[s.id].yrs+'년';
-    }
-  }
-  // 독거 단계 합계 제한
+  const coupleTotal=coupleStages.reduce((sum,s)=>sum+stageState[s.id].yrs,0);
   const soloStages=STAGES.filter(s=>s.solo&&stageState[s.id].on);
-  let soloTotal=soloStages.reduce((sum,s)=>sum+stageState[s.id].yrs,0);
-  if(soloTotal>soloPeriod&&soloPeriod>0){
-    let excess=soloTotal-soloPeriod;
-    for(let i=soloStages.length-1;i>=0&&excess>0;i--){
-      const s=soloStages[i];
-      const cut=Math.min(stageState[s.id].yrs,excess);
-      stageState[s.id].yrs-=cut;
-      excess-=cut;
-      const el=$('styr-'+s.id);if(el)el.value=stageState[s.id].yrs;
-      const lbl=$('styr-lbl-'+s.id);if(lbl)lbl.textContent=stageState[s.id].yrs+'년';
-    }
+  const soloTotal=soloStages.reduce((sum,s)=>sum+stageState[s.id].yrs,0);
+
+  const errEl=$('err-stage');
+  if(errEl){
+    const msgs=[];
+    if(coupleTotal>periodA) msgs.push(`부부 단계 합계 ${coupleTotal}년이 은퇴 기간 ${periodA}년을 초과합니다. 초과분은 계산 시 무시됩니다.`);
+    if(hasSp&&soloTotal>soloPeriod&&soloPeriod>0) msgs.push(`독거 단계 합계 ${soloTotal}년이 독거 기간 ${soloPeriod}년을 초과합니다. 초과분은 계산 시 무시됩니다.`);
+    errEl.textContent=msgs.join(' ');
   }
+
   return{periodA,soloPeriod};
 }
 
@@ -1022,34 +1057,44 @@ function drawC(id,ds,labels,prev){
 }
 
 // 팬 차트: p10/p50/p90 + 음영 구간
-function drawFanChart(id, p10, p50, p90, labels, prev, color='#378ADD'){
+function drawFanChart(id, p10, p50, p90, labels, prev, color='#378ADD', inheritCurve=null){
   if(typeof Chart==='undefined') return null;
   if(prev) try{prev.destroy();}catch(e){}
   const el=$(id);
   if(!el) return null;
-  // 색상 파생
   const hex=color.replace('#','');
   const r=parseInt(hex.slice(0,2),16),g=parseInt(hex.slice(2,4),16),b=parseInt(hex.slice(4,6),16);
   const fillAlpha='rgba('+r+','+g+','+b+',0.12)';
   const lineAlpha='rgba('+r+','+g+','+b+',0.35)';
 
   const datasets=[
-    // p90 (상단 경계 — 음영 기준)
     {label:'상위 10%',data:p90,borderColor:lineAlpha,borderWidth:1,borderDash:[3,3],
      pointRadius:0,fill:'+1',backgroundColor:fillAlpha,tension:.3},
-    // p50 (중앙값 — 굵은 선)
     {label:'중앙값',data:p50,borderColor:color,borderWidth:2.5,
      pointRadius:0,fill:'+1',backgroundColor:fillAlpha,tension:.3},
-    // p10 (하단 경계)
     {label:'하위 10%',data:p10,borderColor:lineAlpha,borderWidth:1,borderDash:[3,3],
      pointRadius:0,fill:false,tension:.3},
   ];
+  // 상속 목표 물가 반영 곡선
+  if(inheritCurve){
+    datasets.push({
+      label:'상속 목표 (물가 반영)',
+      data:inheritCurve,
+      borderColor:'#8B5CF6',
+      borderWidth:1.5,
+      borderDash:[5,4],
+      pointRadius:0,
+      fill:false,
+      tension:.3
+    });
+  }
   return new Chart(el,{type:'line',data:{labels,datasets},options:{
     responsive:true,maintainAspectRatio:false,
     plugins:{
       legend:{display:false},
       tooltip:{mode:'index',intersect:false,callbacks:{
         label:ctx=>{
+          if(ctx.dataset.label==='상속 목표 (물가 반영)') return ` 상속 목표: ${fmtW(Math.max(0,ctx.raw))}`;
           const lbl=['상위 10%','중앙값','하위 10%'][ctx.datasetIndex];
           return ` ${lbl}: ${fmtW(Math.max(0,ctx.raw))}`;
         }
@@ -1169,10 +1214,68 @@ function update(){
   const coupleTotal=coupleActive.reduce((s,st)=>s+stageState[st.id].yrs,0);
   const soloTotal=soloActive.reduce((s,st)=>s+stageState[st.id].yrs,0);
   $('err-stage').textContent='';
+  const cLeft=periodA-coupleTotal;
+  const sLeft=soloPeriod-soloTotal;
   let summaryHTML=coupleActive.map(s=>`<span class="stage-badge" style="background:${s.bg};color:${s.tc}">${s.label}</span> <b>${stageState[s.id].yrs}년</b>`).join(' → ');
-  if(soloActive.length) summaryHTML+=` | 독거: `+soloActive.map(s=>`<span class="stage-badge" style="background:${s.bg};color:${s.tc}">${s.label}</span> <b>${stageState[s.id].yrs}년</b>`).join(' → ');
+  if(cLeft>0) summaryHTML+=` <span style="font-size:11px;color:var(--text3);font-weight:400">(잔여 ${cLeft}년)</span>`;
+  if(soloActive.length){
+    summaryHTML+=` | 독거: `+soloActive.map(s=>`<span class="stage-badge" style="background:${s.bg};color:${s.tc}">${s.label}</span> <b>${stageState[s.id].yrs}년</b>`).join(' → ');
+    if(sLeft>0) summaryHTML+=` <span style="font-size:11px;color:var(--text3);font-weight:400">(잔여 ${sLeft}년)</span>`;
+  }
   summaryHTML+=`<br><span style="font-size:11px;color:var(--text3)">부부 단계 합계 ${coupleTotal}년 / 은퇴 기간 ${periodA}년 · 독거 단계 합계 ${soloTotal}년 / 독거 기간 ${soloPeriod}년</span>`;
   $('stage-summary').innerHTML=summaryHTML;
+
+  // 슬라이더 max 동적 제한 + 합계 기준 잔여기간 표시
+  (function(){
+    // 동반 섹션 헤더 기간 업데이트
+    const cPeriodEl=$('stage-couple-period');
+    const cRemHeaderEl=$('stage-couple-rem');
+    if(cPeriodEl) cPeriodEl.textContent=`(은퇴 기간 ${periodA}년)`;
+    if(cRemHeaderEl){
+      if(cLeft>0){ cRemHeaderEl.textContent=`잔여 ${cLeft}년`; cRemHeaderEl.style.color='#378ADD'; }
+      else { cRemHeaderEl.textContent='딱 맞음'; cRemHeaderEl.style.color='var(--green)'; }
+    }
+
+    // 독거 섹션 헤더 표시/숨김 + 기간 업데이트
+    const soloHeaderEl=$('stage-header-solo');
+    if(soloHeaderEl) soloHeaderEl.style.display=hasSp?'block':'none';
+    const sPeriodEl=$('stage-solo-period');
+    const sRemHeaderEl=$('stage-solo-rem');
+    if(sPeriodEl) sPeriodEl.textContent=hasSp?`(독거 기간 ${soloPeriod}년)`:'';
+    if(sRemHeaderEl&&hasSp){
+      if(sLeft>0){ sRemHeaderEl.textContent=`잔여 ${sLeft}년`; sRemHeaderEl.style.color='#D85A30'; }
+      else { sRemHeaderEl.textContent='딱 맞음'; sRemHeaderEl.style.color='var(--green)'; }
+    }
+
+    // 부부 단계 슬라이더 max 제한 + 잔여기간 표시
+    STAGES.filter(s=>!s.solo).forEach(s=>{
+      const el=$('styr-'+s.id);
+      const rem=$('styr-rem-'+s.id);
+      if(stageState[s.id].on){
+        if(el) el.max=Math.min(65, stageState[s.id].yrs + Math.max(0,cLeft));
+        if(rem){
+          if(cLeft>0){ rem.textContent=`(잔여 ${cLeft}년)`; rem.style.color='var(--text3)'; }
+          else { rem.textContent=''; }
+        }
+      } else {
+        if(rem) rem.textContent='';
+      }
+    });
+    // 독거 단계 슬라이더 max 제한 + 잔여기간 표시
+    STAGES.filter(s=>s.solo).forEach(s=>{
+      const el=$('styr-'+s.id);
+      const rem=$('styr-rem-'+s.id);
+      if(hasSp&&stageState[s.id].on){
+        if(el) el.max=Math.min(65, stageState[s.id].yrs + Math.max(0,sLeft));
+        if(rem){
+          if(sLeft>0){ rem.textContent=`(잔여 ${sLeft}년)`; rem.style.color='var(--text3)'; }
+          else { rem.textContent=''; }
+        }
+      } else {
+        if(rem) rem.textContent='';
+      }
+    });
+  })();
 
   const totalEvtFV=events.reduce((s,e)=>{const ey=e.age-retAge;return s+(ey>=0?e.amt*Math.pow(1+infl/100,ey):0);},0);
   $('event-total').textContent=events.length>0?`이벤트 ${events.length}건 — 미래가치 합계 ${fmtW(totalEvtFV)}`:'이벤트 없음';
@@ -1202,8 +1305,8 @@ function update(){
     tabS.style.display=(hasSp && soloPeriod>0)?'':'none';
   }
 
-  if(retAge<=age){$('err-retire').textContent='은퇴 나이가 현재 나이보다 커야 합니다.';return;}$('err-retire').textContent='';
-  if(hasSp&&spRet<=spAge){$('err-sp-retire').textContent='배우자 은퇴 나이가 현재 나이보다 커야 합니다.';return;}if(hasSp)$('err-sp-retire').textContent='';
+  if(retAge<age){$('err-retire').textContent='은퇴 나이가 현재 나이보다 작을 수 없습니다.';return;}$('err-retire').textContent='';
+  if(hasSp&&spRet<spAge){$('err-sp-retire').textContent='배우자 은퇴 나이가 현재 나이보다 작을 수 없습니다.';return;}if(hasSp)$('err-sp-retire').textContent='';
 
   const meP=calcP(meBase,meMode,meEA,meDA);
   const spP=calcP(spBase,spMode,spEA,spDA);
@@ -1339,6 +1442,16 @@ function update(){
   $('a-rate').textContent=rateA.toFixed(2)+'%';$('a-rate').className='mv '+rateClass(rateA);$('a-rate-s').textContent=rateA<3.5?'안전':rateA<5?'주의':'위험';
   $('a-prob').textContent=probA+'%';$('a-prob').className='mv '+probClass(probA);$('a-prob-s').textContent=probA>=90?'목표 달성':probA>=70?'보완 필요':'재설계 필요';
   $('a-buf').textContent=fmtW(bufAmt);$('a-evt').textContent=fmtW(totalEvtFV);
+  // 상속 목표 미래가치 (종료 시점 물가 반영)
+  // 상속 목표 범례 표시/숨김
+  const legA=$('inherit-leg-a'), legS=$('inherit-leg-s');
+  if(legA) legA.style.display=inherit>0?'flex':'none';
+  if(legS) legS.style.display=inherit>0?'flex':'none';
+  const inheritFV = inherit>0 ? Math.round(inherit*Math.pow(1+infl/100,periodA)) : 0;
+  const inheritEl=$('a-inherit'), inheritSEl=$('a-inherit-s');
+  if(inheritEl) inheritEl.textContent = inherit>0 ? fmtW(inheritFV) : '설정 없음';
+  if(inheritEl) inheritEl.style.color = inherit>0 ? 'var(--purple)' : 'var(--text3)';
+  if(inheritSEl) inheritSEl.textContent = inherit>0 ? `현재가치 ${fmtW(inherit)} · ${periodA}년 후` : '섹션 11에서 설정';
   $('a-gap').textContent=(gapA>=0?'+':'')+fmtW(Math.abs(gapA));$('a-gap').className='mv '+(gapA>=0?'ok':'danger');$('a-gap-s').textContent=gapA>=0?'충분':'추가 필요';
   renderCFTable('cf-body-a',stagesA,pensionsA,infl,events,retAge);
   const chartPeriodA = (hasSp && soloPeriod>0) ? Math.min(soloDeathY, periodA) : periodA;
@@ -1351,7 +1464,11 @@ function update(){
   const p90A = fanA.p90.slice(0, chartPeriodA+1);
   const p50A = fanA.p50.slice(0, chartPeriodA+1);
   const p10A = fanA.p10.slice(0, chartPeriodA+1);
-  cA = drawFanChart('chart-a', p10A, p50A, p90A, labA, cA, '#378ADD');
+  // 상속 목표 물가 반영 곡선 (현재가치 × (1+infl)^y)
+  const inheritCurveA = inherit>0
+    ? Array.from({length:chartPeriodA+1},(_,i)=>Math.round(inherit*Math.pow(1+infl/100,i)))
+    : null;
+  cA = drawFanChart('chart-a', p10A, p50A, p90A, labA, cA, '#378ADD', inheritCurveA);
   if(seqActive && cA){
     const sign=seqRetV>=0?'+':'';
     const seqFull=deterPathSeq(investable,wA,ret,periodA,inflowArrA,seqStartV,seqDurV,seqRetV);
@@ -1445,11 +1562,15 @@ function update(){
   const fanS90 = mcPaths(pathOptimA[dY], wS, ret, vol, soloPeriod);
   const fanS50 = mcPaths(pathBaseA[dY],  wS, ret, vol, soloPeriod);
   const fanS10 = mcPaths(pathPessA[dY],  wS, ret, vol, soloPeriod);
+  // 독거 시나리오 상속 목표 곡선 — 선행사망 시점 자산 기준 이어서 계산
+  const inheritCurveS = inherit>0
+    ? Array.from({length:soloPeriod+1},(_,i)=>Math.round(inherit*Math.pow(1+infl/100,soloDeathY+i)))
+    : null;
   cS = drawFanChart('chart-s',
     fanS10.p10,
     fanS50.p50,
     fanS90.p90,
-    labS, cS, '#BA7517'
+    labS, cS, '#BA7517', inheritCurveS
   );
   $('note-s').textContent=`잔여 ${fmtW(assetAtDeath)} | ${soloName} 홀로 ${soloPeriod}년 | 공적연금 월 ${soloPenAmt}만원`;
   const failS=Math.round(runs*(1-probS/100));
