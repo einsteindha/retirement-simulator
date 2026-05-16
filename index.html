@@ -652,7 +652,7 @@ function evU(id,f,v){const e=events.find(x=>x.id===id);if(e){e[f]=v;update();}}
 // ── 현금흐름 수입 (9번)
 function addCashflow(){
   const id=++cashflowId;
-  cashflows.push({id,label:'주택연금',startAge:65,endAge:0,amt:80});
+  cashflows.push({id,label:'임대소득',startAge:65,endAge:0,amt:80});
   renderCashflows();update();
 }
 function removeCashflow(id){cashflows=cashflows.filter(e=>e.id!==id);renderCashflows();update();}
