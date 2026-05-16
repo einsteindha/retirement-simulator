@@ -342,9 +342,9 @@ input[type=range]{width:100%;margin-top:2px;accent-color:var(--blue)}
 <div class="phase">
   <div class="pt">7 · 인생 단계별 생활비 설계</div>
   <div class="sn" style="margin-bottom:9px">각 단계를 ON/OFF하고 기간과 월 생활비를 입력하세요. 부부 단계 합계는 <b>부부 은퇴 기간</b>을, 독거 단계 합계는 <b>독거 기간</b>을 초과할 수 없습니다.</div>
+  <div style="margin-bottom:10px;padding:9px 13px;background:var(--bg2);border-radius:var(--radius-lg);font-size:12px" id="stage-summary"></div>
   <div class="stage-grid" id="stage-grid"></div>
   <div class="err" id="err-stage" style="margin-top:7px"></div>
-  <div style="margin-top:9px;padding:9px 13px;background:var(--bg2);border-radius:var(--radius-lg);font-size:12px" id="stage-summary"></div>
 </div>
 
 <!-- 8. 이벤트 비용 -->
@@ -530,13 +530,17 @@ let events=[],cashflows=[],fixedPensions=[],inflows=[];
 const STAGES=[
   {id:'active',    label:'활동기',   color:'#378ADD',bg:'#EBF3FF',tc:'#185FA5',desc:'건강하게 활발히 활동하는 시기 (공적연금 수령 전후 자동 반영)',defaultYrs:15,defaultMon:300,solo:false,who:null},
   {id:'recall',    label:'회상기',   color:'#8B5CF6',bg:'#F3EFFE',tc:'#5B21B6',desc:'활동이 줄고 집에서 보내는 시간이 늘어나는 시기',defaultYrs:8,defaultMon:240,solo:false,who:null},
-  {id:'care',      label:'간병기',   color:'#BA7517',bg:'#FFF3CD',tc:'#7A5800',desc:'의료·간병 비용 증가 시기',defaultYrs:5,defaultMon:320,solo:false,who:null},
+  {id:'care',      label:'간병기',   color:'#BA7517',bg:'#FFF3CD',tc:'#7A5800',desc:'의료·간병 비용 증가 시기',defaultYrs:3,defaultMon:320,solo:false,who:null},
   {id:'solo_active',label:'독거 활동기',color:'#1D9E75',bg:'#E1F5EE',tc:'#0F6E56',desc:'홀로 남아 활동하는 시기 (독거 공적연금 자동 반영)',defaultYrs:10,defaultMon:200,solo:true,who:null},
   {id:'solo_care', label:'독거 간병기',color:'#5F5E5A',bg:'#F1EFE8',tc:'#2C2C2A',desc:'홀로 남아 의료·간병 비용 발생 시기',defaultYrs:5,defaultMon:250,solo:true,who:null},
 ];
 let stageState={};
 STAGES.forEach(s=>{
-  stageState[s.id]={on:['active','recall'].includes(s.id),yrs:s.defaultYrs,mon:s.defaultMon};
+  stageState[s.id]={
+    on: s.solo ? hasSp : ['active','recall','care'].includes(s.id),
+    yrs:s.defaultYrs,
+    mon:s.defaultMon
+  };
 });
 
 function buildStageGrid(){
@@ -698,7 +702,7 @@ function fpU(id,f,v){const e=fixedPensions.find(x=>x.id===id);if(e){e[f]=v;updat
 // ── 일시 자산 유입 (8-1번)
 function addInflow(){
   const id=++inflowId;
-  inflows.push({id,label:'상속',age:70,amt:10000});
+  inflows.push({id,label:'상속·증여',age:70,amt:5000});
   renderInflows();update();
 }
 function removeInflow(id){inflows=inflows.filter(e=>e.id!==id);renderInflows();update();}
@@ -784,6 +788,14 @@ function toggleSp(){
   $('pt-plus').style.display=hasSp?'':'none';$('pt-sp-w').style.display=hasSp?'':'none';
   $('solo-pension-phase').style.display=hasSp?'block':'none';
   $('cmp3').style.display=hasSp?'grid':'none';
+  // 독거 단계 ON/OFF 동기화
+  STAGES.filter(s=>s.solo).forEach(s=>{
+    stageState[s.id].on = hasSp;
+    const trEl=$('str-'+s.id);const lblEl=$('stlbl-'+s.id);const bodyEl=$('sbody-'+s.id);
+    if(trEl) trEl.classList.toggle('on', hasSp);
+    if(lblEl) lblEl.textContent=hasSp?'ON':'OFF';
+    if(bodyEl) bodyEl.classList.toggle('open', hasSp);
+  });
   update();
 }
 function setMode(who,mode){
