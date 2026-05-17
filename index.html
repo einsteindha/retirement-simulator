@@ -147,6 +147,19 @@ input[type=range]{width:100%;margin-top:2px;accent-color:var(--blue)}
 .modal-tag-warn{background:#FFF3CD;color:#7A5800}
 .modal-tag-danger{background:#FAECE7;color:#993C1D}
 .modal-divider{height:1px;background:var(--border);margin:16px 0}
+.slider-input-wrap{display:flex;align-items:center;gap:6px;margin-top:4px}
+.slider-input-wrap input[type=range]{flex:1;margin-top:0}
+.num-input{width:72px;padding:4px 6px;border:1px solid var(--border2);border-radius:var(--radius);background:var(--bg);color:var(--text);font-size:12px;font-weight:600;text-align:right;flex-shrink:0}
+.num-input:focus{outline:none;border-color:var(--blue)}
+.num-unit{font-size:11px;color:var(--text2);white-space:nowrap;flex-shrink:0}
+.num-input-row{display:flex;align-items:center;justify-content:flex-end;gap:5px;margin-top:5px}
+.num-input-row .num-input{width:90px;font-size:13px;padding:5px 8px}
+@media(max-width:600px){
+  .slider-input-wrap{flex-direction:column;align-items:stretch;gap:3px}
+  .slider-input-wrap input[type=range]{width:100%}
+  .slider-num-row{display:flex;align-items:center;justify-content:flex-end;gap:5px;margin-top:3px}
+  .slider-num-row .num-input{width:100px;font-size:13px;padding:5px 8px}
+}
 .pen-type-tabs{display:flex;gap:5px;margin-bottom:10px}
 .pen-tab{flex:1;padding:6px 4px;font-size:12px;font-weight:500;border:1px solid var(--border2);border-radius:var(--radius);background:var(--bg);color:var(--text2);cursor:pointer;text-align:center;line-height:1.4;transition:all .15s}
 .pen-tab.active{background:#0D1B3E;color:#E8C97E;border-color:#0D1B3E}
@@ -246,8 +259,8 @@ input[type=range]{width:100%;margin-top:2px;accent-color:var(--blue)}
   <div class="g2">
     <div class="ic"><div class="il">현재 나이 <span class="iv" id="l-age">55세</span></div><input type="range" id="age" min="20" max="90" step="1" value="55"></div>
     <div class="ic"><div class="il">은퇴 예정 나이 <span class="iv" id="l-retire">62세</span></div><input type="range" id="retire" min="40" max="90" step="1" value="62"><div class="err" id="err-retire"></div></div>
-    <div class="ic"><div class="il">현시점 은퇴준비자금 <span class="iv" id="l-asset">5억원</span></div><input type="range" id="asset" min="0" max="100" step="1" value="5"></div>
-    <div class="ic"><div class="il">은퇴까지 연평균 저축 <span class="iv" id="l-save">500만원/년</span></div><input type="range" id="save" min="0" max="10000" step="100" value="500"></div>
+    <div class="ic"><div class="il">현시점 은퇴준비자금 <span class="iv" id="l-asset">5억원</span></div><input type="range" id="asset" min="0" max="100" step="1" value="5" style="width:100%;margin-top:4px" oninput="onSliderChange('asset','num-asset',10000)"><div class="slider-num-row"><input class="num-input" id="num-asset" type="number" min="0" step="100" value="50000" oninput="onNumChange('num-asset','asset',10000)" onblur="onNumBlur('num-asset','asset',10000,0)"><span class="num-unit">만원</span></div></div>
+    <div class="ic"><div class="il">은퇴까지 연평균 저축 <span class="iv" id="l-save">500만원/년</span></div><input type="range" id="save" min="0" max="10000" step="100" value="500" style="width:100%;margin-top:4px" oninput="onSliderChange('save','num-save')"><div class="slider-num-row"><input class="num-input" id="num-save" type="number" min="0" step="100" value="500" oninput="onNumChange('num-save','save')" onblur="onNumBlur('num-save','save',1,0)"><span class="num-unit">만원</span></div></div>
   </div>
 </div>
 
@@ -263,7 +276,7 @@ input[type=range]{width:100%;margin-top:2px;accent-color:var(--blue)}
     <div class="g2">
       <div class="ic"><div class="il">배우자 현재 나이 <span class="iv" id="l-sp-age">52세</span></div><input type="range" id="sp-age" min="20" max="90" step="1" value="52"></div>
       <div class="ic"><div class="il">배우자 은퇴 예정 나이 <span class="iv" id="l-sp-retire">60세</span></div><input type="range" id="sp-retire" min="40" max="90" step="1" value="60"><div class="err" id="err-sp-retire"></div></div>
-      <div class="ic"><div class="il">배우자 연평균 저축 <span class="iv" id="l-sp-save">400만원/년</span></div><input type="range" id="sp-save" min="0" max="10000" step="100" value="400"></div>
+      <div class="ic"><div class="il">배우자 연평균 저축 <span class="iv" id="l-sp-save">400만원/년</span></div><input type="range" id="sp-save" min="0" max="10000" step="100" value="400" style="width:100%;margin-top:4px" oninput="onSliderChange('sp-save','num-sp-save')"><div class="slider-num-row"><input class="num-input" id="num-sp-save" type="number" min="0" step="100" value="400" oninput="onNumChange('num-sp-save','sp-save')" onblur="onNumBlur('num-sp-save','sp-save',1,0)"><span class="num-unit">만원</span></div></div>
     </div>
   </div>
 </div>
@@ -348,7 +361,7 @@ input[type=range]{width:100%;margin-top:2px;accent-color:var(--blue)}
         <div class="il" style="margin-top:8px">수령 시작 나이 <span class="iv" id="l-me-pub-age">62세</span></div>
         <input type="range" id="me-pub-age" min="40" max="80" step="1" value="62" oninput="this.dataset.userSet=1;$('l-me-pub-age').textContent=this.value+'세';debouncedUpdate()">
       </div>
-      <div class="il"><span id="lbl-me-base-age">기준 연금액 (65세)</span> <span class="iv" id="l-me-base">80만원</span></div><input type="range" id="me-base" min="0" max="300" step="5" value="80">
+      <div class="il"><span id="lbl-me-base-age">기준 연금액 (65세)</span> <span class="iv" id="l-me-base">80만원</span></div><input type="range" id="me-base" min="0" max="300" step="5" value="80" style="width:100%;margin-top:4px" oninput="onSliderChange('me-base','num-me-base')"><div class="slider-num-row"><input class="num-input" id="num-me-base" type="number" min="0" max="9999" step="5" value="80" oninput="onNumChange('num-me-base','me-base')" onblur="onNumBlur('num-me-base','me-base',1,0)"><span class="num-unit">만원</span></div>
       <div class="pdg"><div class="pdi"><div class="pdi-l">수령 시작</div><div class="pdi-v" id="me-sa">65세</div><div class="pdi-s" id="me-ml">정상수령</div></div><div class="pdi"><div class="pdi-l">월 수령액</div><div class="pdi-v" id="me-amt">80만원</div><div class="pdi-s" id="me-adj">0%</div></div><div class="pdi"><div class="pdi-l">공백 기간</div><div class="pdi-v" id="me-gap">3년</div><div class="pdi-s">은퇴~연금 전</div></div><div class="pdi"><div class="pdi-l">손익분기</div><div class="pdi-v" id="me-be">—</div><div class="pdi-s" id="me-be-s">—</div></div></div>
       <div class="pn" id="me-notice"></div>
     </div>
@@ -370,7 +383,7 @@ input[type=range]{width:100%;margin-top:2px;accent-color:var(--blue)}
         <div class="il" style="margin-top:8px">수령 시작 나이 <span class="iv" id="l-sp-pub-age">60세</span></div>
         <input type="range" id="sp-pub-age" min="40" max="80" step="1" value="60" oninput="this.dataset.userSet=1;$('l-sp-pub-age').textContent=this.value+'세';debouncedUpdate()">
       </div>
-      <div class="il"><span id="lbl-sp-base-age">기준 연금액 (65세)</span> <span class="iv" id="l-sp-base">60만원</span></div><input type="range" id="sp-base" min="0" max="300" step="5" value="60">
+      <div class="il"><span id="lbl-sp-base-age">기준 연금액 (65세)</span> <span class="iv" id="l-sp-base">60만원</span></div><input type="range" id="sp-base" min="0" max="300" step="5" value="60" style="width:100%;margin-top:4px" oninput="onSliderChange('sp-base','num-sp-base')"><div class="slider-num-row"><input class="num-input" id="num-sp-base" type="number" min="0" max="9999" step="5" value="60" oninput="onNumChange('num-sp-base','sp-base')" onblur="onNumBlur('num-sp-base','sp-base',1,0)"><span class="num-unit">만원</span></div>
       <div class="pdg"><div class="pdi"><div class="pdi-l">수령 시작</div><div class="pdi-v" id="sp-sa">65세</div><div class="pdi-s" id="sp-ml">정상수령</div></div><div class="pdi"><div class="pdi-l">월 수령액</div><div class="pdi-v" id="sp-amt">60만원</div><div class="pdi-s" id="sp-adj">0%</div></div><div class="pdi"><div class="pdi-l">공백 기간</div><div class="pdi-v" id="sp-gap">—</div><div class="pdi-s">배우자 은퇴~연금 전</div></div><div class="pdi"><div class="pdi-l">손익분기</div><div class="pdi-v" id="sp-be">—</div><div class="pdi-s" id="sp-be-s">—</div></div></div>
       <div class="pn" id="sp-notice"></div>
     </div>
@@ -464,7 +477,7 @@ input[type=range]{width:100%;margin-top:2px;accent-color:var(--blue)}
       <div class="sn" style="margin-top:6px">각 단계의 실제 인출 필요액 기준으로 단계별 버퍼가 계산됩니다.</div>
     </div>
     <div class="ic"><div class="il">물가상승률 <span class="iv" id="l-infl">3.0%</span></div><input type="range" id="infl" min="1" max="6" step="0.5" value="3"></div>
-    <div class="ic"><div class="il">상속 목표 <span class="iv" id="l-inherit">0억원</span></div><input type="range" id="inherit" min="0" max="100" step="0.5" value="0"></div>
+    <div class="ic"><div class="il">상속 목표 <span class="iv" id="l-inherit">0억원</span></div><input type="range" id="inherit" min="0" max="100" step="0.5" value="0" style="width:100%;margin-top:4px" oninput="onSliderChange('inherit','num-inherit',10000)"><div class="slider-num-row"><input class="num-input" id="num-inherit" type="number" min="0" step="500" value="0" oninput="onNumChange('num-inherit','inherit',10000)" onblur="onNumBlur('num-inherit','inherit',10000,0)"><span class="num-unit">만원</span></div></div>
   </div>
   <!-- 단계별 버퍼 상세 -->
   <div style="margin-top:12px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-lg);padding:13px 15px" id="buf-detail-wrap">
@@ -517,7 +530,7 @@ input[type=range]{width:100%;margin-top:2px;accent-color:var(--blue)}
         <div class="li"><div class="ld" style="background:#378ADD"></div>중앙값</div>
         <div class="li"><div class="ld" style="background:rgba(55,138,221,0.35)"></div>하위 10%</div>
         <div class="li seq-leg" id="seq-leg" style="display:none"><div class="ld" style="background:#A855F7"></div>수익률 시나리오</div>
-        <div class="li" id="inherit-leg-a" style="display:none"><div class="ld" style="background:#8B5CF6;border-top:2px dashed #8B5CF6;height:0"></div>상속 목표</div>
+        <div class="li" id="inherit-leg-a" style="display:none"><div class="ld" style="background:#C9A84C;border-top:2px dashed #C9A84C;height:0"></div>상속 목표</div>
       </div>
     </div>
     <!-- 시퀀스 리스크 입력 -->
@@ -574,7 +587,7 @@ input[type=range]{width:100%;margin-top:2px;accent-color:var(--blue)}
   </div>
   <div class="cc">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:7px"><span style="font-size:13px;font-weight:600" id="chart-s-title">독거자 자산</span><div class="leg"><div class="li"><div class="ld" style="background:rgba(186,117,23,0.35)"></div>상위 10%</div><div class="li"><div class="ld" style="background:#BA7517"></div>중앙값</div><div class="li"><div class="ld" style="background:rgba(186,117,23,0.35)"></div>하위 10%</div>
-        <div class="li" id="inherit-leg-s" style="display:none"><div class="ld" style="background:#8B5CF6;border-top:2px dashed #8B5CF6;height:0"></div>상속 목표</div></div></div>
+        <div class="li" id="inherit-leg-s" style="display:none"><div class="ld" style="background:#C9A84C;border-top:2px dashed #C9A84C;height:0"></div>상속 목표</div></div></div>
     <div style="position:relative;width:100%;height:240px"><canvas id="chart-s" role="img" aria-label="독거 시나리오 자산 잔액"></canvas></div>
     <div style="font-size:11px;color:var(--text3);margin-top:6px" id="note-s"></div>
   </div>
@@ -668,11 +681,19 @@ function buildStageGrid(){
         <div class="stage-inputs">
           <div class="ic">
             <div class="il">기간 <span style="display:flex;align-items:baseline;gap:5px"><span class="iv" id="styr-lbl-${s.id}">${st.yrs}년</span><span id="styr-rem-${s.id}" style="font-size:11px;font-weight:400;color:var(--text3)"></span></span></div>
-            <input type="range" id="styr-${s.id}" min="0" max="65" step="1" value="${st.yrs}" oninput="stageYrInput('${s.id}',this.value)">
+            <input type="range" id="styr-${s.id}" min="0" max="65" step="1" value="${st.yrs}" style="width:100%;margin-top:4px" oninput="stageYrInput('${s.id}',this.value);const nm=$('styr-num-${s.id}');if(nm&&document.activeElement!==nm)nm.value=this.value">
+            <div class="slider-num-row">
+              <input class="num-input" id="styr-num-${s.id}" type="number" min="0" max="65" step="1" value="${st.yrs}" oninput="const v=+this.value||0;$('styr-${s.id}').value=Math.min(65,v);stageYrInput('${s.id}',Math.min(65,v))" onblur="if(this.value==='')this.value=0;$('styr-${s.id}').value=Math.min(65,+this.value||0);stageYrInput('${s.id}',+$('styr-${s.id}').value)">
+              <span class="num-unit">년</span>
+            </div>
           </div>
           <div class="ic">
             <div class="il">월 생활비 <span class="iv" id="stmon-lbl-${s.id}">${st.mon}만원</span></div>
-            <input type="range" id="stmon-${s.id}" min="50" max="3000" step="10" value="${st.mon}" oninput="stageMonInput('${s.id}',this.value)">
+            <input type="range" id="stmon-${s.id}" min="0" max="3000" step="10" value="${st.mon}" style="width:100%;margin-top:4px" oninput="stageMonInput('${s.id}',this.value);const nm=$('stmon-num-${s.id}');if(nm&&document.activeElement!==nm)nm.value=this.value">
+            <div class="slider-num-row">
+              <input class="num-input" id="stmon-num-${s.id}" type="number" min="0" step="10" value="${st.mon}" oninput="const v=this.value;if(v==='')return;if(v.length>1&&v.startsWith('0')){this.value=String(+v);return;}stageMonInput('${s.id}',Math.max(0,+v));$('stmon-${s.id}').value=Math.min(3000,+v)" onblur="if(this.value==='')this.value=0;stageMonInput('${s.id}',+this.value||0)">
+              <span class="num-unit">만원</span>
+            </div>
           </div>
         </div>
       </div>`;
@@ -709,11 +730,19 @@ function buildStageGrid(){
         <div class="stage-inputs">
           <div class="ic">
             <div class="il">기간 <span style="display:flex;align-items:baseline;gap:5px"><span class="iv" id="styr-lbl-${s.id}">${st.yrs}년</span><span id="styr-rem-${s.id}" style="font-size:11px;font-weight:400;color:var(--text3)"></span></span></div>
-            <input type="range" id="styr-${s.id}" min="0" max="65" step="1" value="${st.yrs}" oninput="stageYrInput('${s.id}',this.value)">
+            <input type="range" id="styr-${s.id}" min="0" max="65" step="1" value="${st.yrs}" style="width:100%;margin-top:4px" oninput="stageYrInput('${s.id}',this.value);const nm=$('styr-num-${s.id}');if(nm&&document.activeElement!==nm)nm.value=this.value">
+            <div class="slider-num-row">
+              <input class="num-input" id="styr-num-${s.id}" type="number" min="0" max="65" step="1" value="${st.yrs}" oninput="const v=+this.value||0;$('styr-${s.id}').value=Math.min(65,v);stageYrInput('${s.id}',Math.min(65,v))" onblur="if(this.value==='')this.value=0;$('styr-${s.id}').value=Math.min(65,+this.value||0);stageYrInput('${s.id}',+$('styr-${s.id}').value)">
+              <span class="num-unit">년</span>
+            </div>
           </div>
           <div class="ic">
             <div class="il">월 생활비 <span class="iv" id="stmon-lbl-${s.id}">${st.mon}만원</span></div>
-            <input type="range" id="stmon-${s.id}" min="50" max="3000" step="10" value="${st.mon}" oninput="stageMonInput('${s.id}',this.value)">
+            <input type="range" id="stmon-${s.id}" min="0" max="3000" step="10" value="${st.mon}" style="width:100%;margin-top:4px" oninput="stageMonInput('${s.id}',this.value);const nm=$('stmon-num-${s.id}');if(nm&&document.activeElement!==nm)nm.value=this.value">
+            <div class="slider-num-row">
+              <input class="num-input" id="stmon-num-${s.id}" type="number" min="0" step="10" value="${st.mon}" oninput="const v=this.value;if(v==='')return;if(v.length>1&&v.startsWith('0')){this.value=String(+v);return;}stageMonInput('${s.id}',Math.max(0,+v));$('stmon-${s.id}').value=Math.min(3000,+v)" onblur="if(this.value==='')this.value=0;stageMonInput('${s.id}',+this.value||0)">
+              <span class="num-unit">만원</span>
+            </div>
           </div>
         </div>
       </div>`;
@@ -731,8 +760,24 @@ function toggleStage(id){
   $('sbody-'+id).classList.toggle('open',on);
   update();
 }
-function stageYrInput(id,val){stageState[id].yrs=+val;$('styr-lbl-'+id).textContent=val+'년';update();}
-function stageMonInput(id,val){stageState[id].mon=+val;$('stmon-lbl-'+id).textContent=val+'만원';update();}
+function stageYrInput(id,val){
+  const v=Math.min(65,Math.max(0,+val||0));
+  stageState[id].yrs=v;
+  $('styr-lbl-'+id).textContent=v+'년';
+  const nm=$('styr-num-'+id);
+  if(nm&&document.activeElement!==nm&&+nm.value!==v) nm.value=v;
+  debouncedUpdate();
+}
+function stageMonInput(id,val){
+  const v=Math.max(0,+val||0); // min 0으로 변경 — 자유 입력
+  stageState[id].mon=v;
+  $('stmon-lbl-'+id).textContent=v+'만원';
+  const nm=$('stmon-num-'+id);
+  if(nm&&document.activeElement!==nm&&+nm.value!==v) nm.value=v;
+  const sl=$('stmon-'+id);
+  if(sl&&+sl.value!==Math.min(3000,v)) sl.value=Math.min(3000,v);
+  debouncedUpdate();
+}
 
 // 단계 기간 제한 — stageState 원본은 수정하지 않고 경고만 표시
 function clampStageYears(retireAge,meLife,spLife){
@@ -881,6 +926,61 @@ function getPortParams(phase='retire'){
   // phase: 'accum'(적립기) or 'retire'(인출기)
   if(phase==='accum') return{ret:+$('ret-simple').value,vol:+$('vol-simple').value};
   return{ret:+$('ret-retire').value,vol:+$('vol-retire').value};
+}
+
+// ── 슬라이더 ↔ 숫자 입력 양방향 연동
+// sliderId: range input id, numId: number input id, scale: 슬라이더값→만원 변환 배수
+function syncSliderToNum(sliderId, numId, scale=1){
+  const sl=$(sliderId), nm=$(numId);
+  if(!sl||!nm) return;
+  nm.value = Math.round(+sl.value * scale);
+}
+function onSliderChange(sliderId, numId, scale=1){
+  const nm=$(numId);
+  if(nm && document.activeElement!==nm){
+    nm.value = Math.round(+$(sliderId).value * scale);
+  }
+  debouncedUpdate();
+}
+function onNumChange(numId, sliderId, scale=1){
+  const nm=$(numId), sl=$(sliderId);
+  if(!nm||!sl) return;
+  const raw = nm.value;
+  // 앞자리 0 처리: '0X' 형태면 앞 0 제거
+  if(raw.length>1 && raw.startsWith('0') && !raw.startsWith('0.')){
+    nm.value = String(+raw);
+  }
+  // 빈값이면 슬라이더 0으로 + update 호출 (라벨이 0으로 표시됨)
+  const val = raw==='' ? 0 : (+raw||0);
+  sl.value = Math.min(+sl.max, Math.max(+sl.min, Math.round(val/scale)));
+  debouncedUpdate();
+}
+function onNumBlur(numId, sliderId, scale=1, minVal=0){
+  const nm=$(numId), sl=$(sliderId);
+  if(!nm||!sl) return;
+  // blur 시 빈 값이면 최솟값으로 확정
+  if(nm.value===''||nm.value===null) nm.value=minVal;
+  const val = Math.max(minVal, +nm.value||minVal);
+  nm.value = val;
+  sl.value = Math.min(+sl.max, Math.max(+sl.min, Math.round(val/scale)));
+  debouncedUpdate();
+}
+// update()에서 숫자 입력창 값을 슬라이더에 맞게 동기화
+function syncAllNumInputs(){
+  // asset, inherit는 슬라이더 step이 커서 num이 실제값의 master
+  // → 슬라이더가 num을 덮어쓰지 않음
+  // save, sp-save, me-base, sp-base는 슬라이더와 num이 같은 단위라 동기화
+  const focused = document.activeElement;
+  function sync(nmId, slId){
+    const nm=$(nmId), sl=$(slId);
+    if(!nm||!sl||nm===focused) return;
+    if(+nm.value !== +sl.value) nm.value = +sl.value;
+  }
+  sync('num-save',    'save');
+  sync('num-sp-save', 'sp-save');
+  sync('num-me-base', 'me-base');
+  sync('num-sp-base', 'sp-base');
+  // asset, inherit: 슬라이더→num 동기화 안 함 (num이 master, 슬라이더는 참고용)
 }
 
 // ── 퇴직연도 기반 직역연금(공무원연금 기준) 개시연령 계산
@@ -1205,7 +1305,7 @@ function drawFanChart(id, p10, p50, p90, labels, prev, color='#378ADD', inheritC
     datasets.push({
       label:'상속 목표 (물가 반영)',
       data:inheritCurve,
-      borderColor:'#8B5CF6',
+      borderColor:'#C9A84C',
       borderWidth:1.5,
       borderDash:[5,4],
       pointRadius:0,
@@ -1274,13 +1374,25 @@ function renderCFTable(bodyId,stages,pensions,infl,evts,retireAge){
 
 function update(){
   updateSoloPensionTotals();
+  syncAllNumInputs();
   const age=+$('age').value,retAge=+$('retire').value;
-  const assetNow=+$('asset').value*10000,saveYr=+$('save').value;
-  const spAge=+$('sp-age').value,spRet=+$('sp-retire').value,spSave=+$('sp-save').value;
+  // 숫자 입력창이 있으면 그 값을 우선 사용 (슬라이더 step 반올림 무시)
+  const _numAsset=$('num-asset'), _numSave=$('num-save'), _numSpSave=$('num-sp-save');
+  // 빈값('')이면 0, 숫자면 그대로 사용
+  const readNum = (el, fallback=0) => !el ? fallback : (el.value==='' ? 0 : (+el.value||0));
+  const assetNow = readNum(_numAsset, +$('asset').value*10000);
+  const saveYr   = readNum(_numSave,  +$('save').value);
+  const spAge=+$('sp-age').value,spRet=+$('sp-retire').value;
+  const spSave   = readNum(_numSpSave, +$('sp-save').value);
   const meLife=+$('me-life').value,spLife=+$('sp-life').value;
-  const meBase=+$('me-base').value,meEA=+$('me-early').value,meDA=+$('me-defer').value;
-  const spBase=+$('sp-base').value,spEA=+$('sp-early').value,spDA=+$('sp-defer').value;
-  const buf=+$('buffer').value,infl=+$('infl').value,inherit=+$('inherit').value*10000;
+  const _numMeBase=$('num-me-base'), _numSpBase=$('num-sp-base');
+  const meBase = readNum(_numMeBase, +$('me-base').value);
+  const spBase = readNum(_numSpBase, +$('sp-base').value);
+  const meEA=+$('me-early').value,meDA=+$('me-defer').value;
+  const spEA=+$('sp-early').value,spDA=+$('sp-defer').value;
+  const buf=+$('buffer').value,infl=+$('infl').value;
+  const _numInherit=$('num-inherit');
+  const inherit = readNum(_numInherit, +$('inherit').value*10000);
 
   const mePeriod=Math.max(1,meLife-retAge);
   // soloDeathY와 soloPeriod를 먼저 계산 후 periodA 결정 (연속성 보장)
@@ -1310,7 +1422,7 @@ function update(){
 
   // 라벨
   $('l-age').textContent=age+'세';$('l-retire').textContent=retAge+'세';
-  $('l-asset').textContent=fmtW(assetNow);
+  $('l-asset').textContent=fmtW(assetNow); // 실제 만원 단위 반영
   $('l-save').textContent=fmt(saveYr)+'원/년';
   if(hasSp){$('l-sp-age').textContent=spAge+'세';$('l-sp-retire').textContent=spRet+'세';$('l-sp-save').textContent=fmt(spSave)+'원/년';}
   $('l-me-life').textContent=meLife+'세';$('l-sp-life').textContent=spLife+'세';
@@ -1552,8 +1664,7 @@ function update(){
       if(yearFromRetire < cursor + yrs) return stageState[s.id].mon;
       cursor += yrs;
     }
-    // 마지막 단계 이후엔 마지막 생활비 적용
-    return coupleOn.length ? stageState[coupleOn[coupleOn.length-1].id].mon : 250;
+    return coupleOn.length ? stageState[coupleOn[coupleOn.length-1].id].mon : 0;
   }
 
   function calcBufBySegments(retireAge, meRetireAge, spRetireAge, meP, spP, bufYrs){
@@ -1693,7 +1804,7 @@ function update(){
   const inheritFV = inherit>0 ? Math.round(inherit*Math.pow(1+infl/100,periodA)) : 0;
   const inheritEl=$('a-inherit'), inheritSEl=$('a-inherit-s');
   if(inheritEl) inheritEl.textContent = inherit>0 ? fmtW(inheritFV) : '설정 없음';
-  if(inheritEl) inheritEl.style.color = inherit>0 ? 'var(--purple)' : 'var(--text3)';
+  if(inheritEl) inheritEl.style.color = inherit>0 ? '#C9A84C' : 'var(--text3)';
   if(inheritSEl) inheritSEl.textContent = inherit>0 ? `현재가치 ${fmtW(inherit)} · ${periodA}년 후` : '섹션 11에서 설정';
   $('a-gap').textContent=(gapA>=0?'+':'')+fmtW(Math.abs(gapA));$('a-gap').className='mv '+(gapA>=0?'ok':'danger');$('a-gap-s').textContent=gapA>=0?'충분':'추가 필요';
   renderCFTable('cf-body-a',stagesA,pensionsA,infl,events,retAge);
