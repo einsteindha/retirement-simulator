@@ -112,6 +112,28 @@ input[type=range]{width:100%;margin-top:2px;accent-color:var(--blue)}
 .pti{text-align:center}.ptl{font-size:11px;color:var(--text2)}.ptv{font-size:14px;font-weight:600}
 .ptsep{color:var(--border2);font-size:14px}
 .pn{font-size:11px;color:var(--text2);background:var(--bg2);padding:5px 8px;border-radius:var(--radius);margin-top:6px;line-height:1.5}
+/* 설명서 모달 */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:1000;align-items:flex-start;justify-content:center;padding:20px;overflow-y:auto}
+.modal-overlay.open{display:flex}
+.modal-box{background:var(--bg);border-radius:16px;width:100%;max-width:700px;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.4);position:relative;margin:auto}
+.modal-header{position:sticky;top:0;background:var(--bg);padding:18px 22px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;z-index:1;border-radius:16px 16px 0 0}
+.modal-header-title{font-size:16px;font-weight:700;color:var(--text)}
+.modal-close{width:32px;height:32px;border-radius:50%;border:1px solid var(--border2);background:var(--bg2);color:var(--text2);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.modal-close:hover{background:var(--bg3)}
+.modal-body{padding:22px}
+.modal-body h2{font-size:15px;font-weight:700;color:var(--text);margin:22px 0 8px;padding-bottom:6px;border-bottom:1px solid var(--border)}
+.modal-body h2:first-child{margin-top:0}
+.modal-body h3{font-size:13px;font-weight:600;color:var(--blue);margin:16px 0 6px}
+.modal-body p{font-size:13px;color:var(--text2);line-height:1.8;margin-bottom:8px}
+.modal-body ul{padding-left:16px;margin-bottom:8px}
+.modal-body ul li{font-size:13px;color:var(--text2);line-height:1.8;margin-bottom:3px}
+.modal-body ul li b{color:var(--text)}
+.modal-body .modal-note{font-size:12px;color:var(--text3);background:var(--bg2);padding:10px 13px;border-radius:var(--radius);line-height:1.7;margin-top:6px}
+.modal-body .modal-tag{display:inline-block;font-size:11px;padding:2px 7px;border-radius:4px;font-weight:600;margin-right:4px}
+.modal-tag-ok{background:#E1F5EE;color:#0F6E56}
+.modal-tag-warn{background:#FFF3CD;color:#7A5800}
+.modal-tag-danger{background:#FAECE7;color:#993C1D}
+.modal-divider{height:1px;background:var(--border);margin:16px 0}
 .pen-type-tabs{display:flex;gap:5px;margin-bottom:10px}
 .pen-tab{flex:1;padding:6px 4px;font-size:12px;font-weight:500;border:1px solid var(--border2);border-radius:var(--radius);background:var(--bg);color:var(--text2);cursor:pointer;text-align:center;line-height:1.4;transition:all .15s}
 .pen-tab.active{background:#0D1B3E;color:#E8C97E;border-color:#0D1B3E}
@@ -190,7 +212,10 @@ input[type=range]{width:100%;margin-top:2px;accent-color:var(--blue)}
     <div class="header-title">은퇴 안전 인출 계산기</div>
     <div class="header-sub">정원준 CFP · 몬테카를로 시뮬레이션 기반</div>
   </div>
-  <span class="header-badge">상담용 참고자료</span>
+  <div style="display:flex;align-items:center;gap:8px">
+    <button onclick="openManual()" style="padding:5px 12px;font-size:12px;font-weight:600;background:transparent;color:#E8C97E;border:1px solid #C9A84C;border-radius:20px;cursor:pointer;white-space:nowrap">📖 사용 설명서</button>
+    <span class="header-badge">상담용 참고자료</span>
+  </div>
 </div>
 <div class="container">
 <!-- LEFT: 입력 영역 -->
@@ -1780,6 +1805,159 @@ renderInflows();
 renderCashflows();
 renderFixedPensions();
 update();
+</script>
+
+<!-- 사용 설명서 모달 -->
+<div class="modal-overlay" id="manual-modal" onclick="closeManualOutside(event)">
+  <div class="modal-box">
+    <div class="modal-header">
+      <span class="modal-header-title">📖 은퇴 안전 인출 계산기 사용 설명서</span>
+      <button class="modal-close" onclick="closeManual()">×</button>
+    </div>
+    <div class="modal-body">
+
+      <h2>이 계산기를 만든 이유</h2>
+      <p>은퇴는 인생에서 가장 큰 재무적 미션 중 하나입니다. 많은 분들이 "돈이 얼마나 있어야 할까?", "매달 얼마를 써도 될까?"라는 질문에 막연한 불안을 느낍니다.</p>
+      <p>이 계산기는 그 불안을 구체적인 숫자로 바꾸기 위해 만들었습니다. 문제를 부각시키는 것이 아니라, 내 상황을 정확히 파악해서 불안을 해소하고 — 돈 걱정보다 삶에 집중할 수 있도록 돕는 것이 목적입니다.</p>
+      <p>숫자를 하나씩 채워갈수록 막연했던 불안이 "이 정도면 충분하다" 또는 "여기를 보완하면 된다"는 명확한 방향으로 바뀝니다. <b>PC에서 사용하시길 권장합니다.</b></p>
+
+      <div class="modal-divider"></div>
+      <h2>섹션별 입력 가이드</h2>
+
+      <h3>1 · 본인 정보</h3>
+      <ul>
+        <li><b>현재 나이</b>: 만 나이로 입력하세요.</li>
+        <li><b>은퇴 예정 나이</b>: 이미 은퇴하셨다면 현재 나이와 같게 입력하세요.</li>
+        <li><b>현시점 은퇴준비자금</b>: 현재 보유한 투자·저축 자산 합계입니다. 거주용 부동산은 제외하세요. 단, 향후 다운사이징으로 목돈이 생기는 경우 <b>9번 일시 자산 유입</b>에, 주택연금으로 활용할 계획이라면 <b>11번 정액 수령 연금</b>에 별도로 반영하세요.</li>
+        <li><b>은퇴까지 연평균 저축</b>: 은퇴 전까지 매년 추가로 쌓을 금액입니다. 이미 은퇴하셨다면 0으로 두세요.</li>
+      </ul>
+
+      <h3>2 · 배우자 정보</h3>
+      <ul>
+        <li>배우자가 있으면 토글을 ON으로 켜세요. 독신·1인가구·한부모는 OFF로 두면 됩니다.</li>
+        <li>배우자 정보를 입력하면 <b>독거 시나리오</b>가 자동으로 활성화됩니다.</li>
+      </ul>
+
+      <h3>3 · 기대수명 설정</h3>
+      <ul>
+        <li>실제 사망 시점이 아닌 <b>재무 계획 종료 시점</b>입니다. 보수적으로 길게 잡을수록 안전합니다.</li>
+        <li><b>통계청 기대여명표</b>를 참고해 본인 현재 나이 기준 기대여명을 확인하세요. 보수적인 계획을 위해 <b>기대여명 +5세</b>를 더하는 것을 권장합니다.</li>
+        <li>가계에 장수 또는 단명 경향이 있다면 그에 맞게 조정하세요.</li>
+        <li>두 분의 기대수명 차이가 <b>독거 기간</b>으로 자동 계산됩니다.</li>
+      </ul>
+
+      <h3>4 · 은퇴 자산 포트폴리오</h3>
+      <ul>
+        <li><b>적립기 수익률·변동성</b>: 은퇴 전 자산 성장 추산에 사용됩니다.</li>
+        <li><b>인출기 수익률·변동성</b>: 은퇴 후 몬테카를로 시뮬레이션에 사용됩니다. 인출기에는 적립기보다 보수적인 수치를 권장합니다.</li>
+        <li>Portfolio Visualizer 등 백테스트 도구로 본인 포트폴리오의 과거 수익률·변동성을 확인 후 입력하거나, CFP 상담 결과값을 사용하세요.</li>
+        <li>단, <b>중단기 성과는 시장 사이클에 따라 결과가 왜곡될 수 있으므로</b> 상승장·하락장·횡보장 등 다양한 국면이 포함된 충분히 긴 기간을 기준으로 평가하는 것을 권장합니다.</li>
+      </ul>
+
+      <h3>5 · 공적연금 수령 전략</h3>
+      <ul>
+        <li><b>국민연금 / 직역연금 선택</b>: 직역연금(공무원·군인·사학·별정우체국)은 퇴직 즉시 수령이 원칙으로 조기·연기 전략이 없습니다.</li>
+        <li><b>국민연금</b>: 출생연도에 따라 정상수급 나이가 자동 계산됩니다(1969년생 이후 65세).
+          <ul>
+            <li><b>조기수령</b>: 최대 5년 일찍 받는 대신 연 6%씩 감액. 손익분기점이 자동 계산됩니다.</li>
+            <li><b>연기수령</b>: 최대 5년 늦게 받는 대신 연 7.2%씩 증액. 건강 상태와 다른 소득원을 함께 고려하세요.</li>
+          </ul>
+        </li>
+        <li><b>기준 연금액</b>: 국민연금공단 홈페이지 → 내 연금 알아보기에서 확인하세요.</li>
+      </ul>
+
+      <h3>6 · 독거자 공적연금 입력</h3>
+      <ul>
+        <li>배우자 ON일 때만 나타납니다.</li>
+        <li>기대수명 기준으로 누가 먼저 사망하는지 자동 판단하여 독거자가 결정됩니다.</li>
+        <li>유족연금 수령 여부는 개인 상황에 따라 달라지므로 <b>국민연금공단에 직접 확인</b> 후 입력하세요.</li>
+        <li>유족연금과 본인 연금은 중복 수령 시 조정될 수 있습니다.</li>
+      </ul>
+
+      <h3>7 · 인생 단계별 생활비 설계</h3>
+      <p>각 단계를 ON/OFF하고 기간과 월 생활비를 설정합니다. 잔여 기간이 실시간으로 표시됩니다.</p>
+      <p>생활비를 입력할 때 뉴스나 통계의 평균값보다는 <b>은퇴 직전 본인의 월 지출</b>을 기준으로 삼는 것이 훨씬 정확합니다. 각 단계별로 그 지출의 몇 %를 쓸지 생각해보세요.</p>
+      <ul>
+        <li><b>활동기</b>: 건강하게 활발히 활동하는 시기. 여행·취미·외식 등 지출이 많아 OECD·IMF·세계은행 등 국제기관의 권고(은퇴 전 소득의 70~80%)와 달리, 실제 한국 은퇴자는 <b>은퇴 전 지출의 95% 이상</b>을 지속하는 경우가 많습니다. 평균값을 그대로 쓰기보다 본인 지출 기준으로 설정하세요.</li>
+        <li><b>회상기</b>: 활동이 줄고 집에서 보내는 시간이 늘어나는 시기. 활동기 대비 <b>70~80% 수준</b>으로 줄어드는 경우가 많습니다.</li>
+        <li><b>간병기</b>: 의료·간병 비용이 증가하는 시기. 간병 형태(재가·요양원 등)에 따라 차이가 크므로 본인 상황에 맞게 설정하세요. 활동기 대비 <b>90~110% 수준</b>으로 다시 올라가는 경우가 많습니다.</li>
+        <li><b>독거 활동기·독거 간병기</b>: 배우자 사망 후 홀로 생활하는 기간. 부부 단계 대비 <b>60~70% 수준</b>을 기준으로 조정하세요. 배우자 ON일 때만 활성화됩니다.</li>
+      </ul>
+      <div class="modal-note">💡 어떤 단계든 뉴스에서 본 "노후 평균 생활비"를 그대로 쓰는 것은 위험합니다. 평균은 나와 전혀 다른 소비 수준의 사람들을 모두 포함한 수치입니다. <b>내 지출을 기준으로, 단계별 변화율을 고려해 직접 설정하는 것</b>이 가장 정확합니다.</div>
+
+      <h3>8 · 자산 유출 (일시금 또는 정기금)</h3>
+      <ul>
+        <li>특정 시점에 발생하는 목돈 지출 또는 정기 유출을 입력합니다.</li>
+        <li>예시: 자녀 결혼 지원, 주택 수리, 의료비, 노부모 부양(정기금) 등</li>
+        <li><b>현재 물가 기준</b>으로 입력하면 물가상승률이 자동 반영됩니다.</li>
+      </ul>
+
+      <h3>9 · 일시 자산 유입</h3>
+      <ul>
+        <li>상속·증여·부동산 매각·다운사이징 등 특정 시점에 한 번 들어오는 목돈을 입력합니다.</li>
+        <li>해당 연도 자산에 직접 추가됩니다.</li>
+      </ul>
+
+      <h3>10 · 추가 현금흐름 수입</h3>
+      <ul>
+        <li>임대소득, 브릿지잡 급여, 개인연금 등 <b>실질가치가 유지되는</b> 정기 수입을 입력합니다.</li>
+        <li>종료 나이를 0으로 입력하면 사망까지 지속됩니다.</li>
+        <li>명목 고정 수입(주택연금 등)은 11번에 입력하세요.</li>
+      </ul>
+
+      <h3>11 · 정액 수령 연금</h3>
+      <ul>
+        <li>주택연금, 보험사 연금처럼 <b>금액이 고정된</b> 상품을 입력합니다.</li>
+        <li>물가 연동 없이 명목 금액 그대로 차감되므로 시간이 지날수록 실질가치가 감소하는 점에 유의하세요.</li>
+      </ul>
+
+      <h3>12 · 기타 인출 조건</h3>
+      <ul>
+        <li><b>현금 버퍼 기간</b>: 하락장에서 자산을 팔지 않고도 생활을 영위할 수 있는 최소한의 안전장치입니다. 단순한 대기자금처럼 보여 기회비용이 걱정될 수 있습니다. 하지만 충분한 버퍼는 은퇴 초기 하락장의 충격을 흡수하는 <b>시퀀스 리스크 방어막</b>으로, 오히려 은퇴 계획 전체의 성공률을 높여줍니다. 공적연금 수령 전 공백기와 생활비 규모에 따라 구간별로 자동 계산됩니다.</li>
+        <li><b>물가상승률</b>: 중앙은행의 물가안정 목표는 2%이지만, 이는 소비자물가지수 기준입니다. 실제 생활에서 체감하는 의료비·외식비·서비스 물가, 그리고 부동산 관련 물가는 이보다 높게 움직이는 경우가 많습니다. 이 계산기의 기본값인 <b>3~3.5%</b>는 이런 현실을 반영한 수치입니다. 장기 계획일수록 물가 가정이 결과에 미치는 영향이 크므로 보수적으로 설정하는 것을 권장합니다.</li>
+        <li><b>상속 목표</b>: 사망 시점에 남기고 싶은 자산을 현재가치로 입력합니다. 물가 반영 목표 곡선이 차트에 함께 표시됩니다.</li>
+      </ul>
+
+      <div class="modal-divider"></div>
+      <h2>결과 해석</h2>
+
+      <h3>은퇴 계획 성공확률</h3>
+      <p>1,200가지 시장 시나리오 중 자산이 고갈되지 않고 상속 목표까지 달성하는 비율입니다.</p>
+      <ul>
+        <li><span class="modal-tag modal-tag-ok">95% 이상</span> 안전 — 현재 계획으로 충분합니다.</li>
+        <li><span class="modal-tag modal-tag-warn">85~95%</span> 보완 필요 — 지출 조정 또는 추가 저축을 검토하세요.</li>
+        <li><span class="modal-tag modal-tag-danger">85% 미만</span> 재설계 필요 — CFP와 함께 계획을 재검토하세요.</li>
+      </ul>
+
+      <h3>인출률</h3>
+      <p>은퇴 1년차에 투자 자산 대비 얼마를 인출하는지 보여줍니다.</p>
+      <ul>
+        <li><span class="modal-tag modal-tag-ok">3.5% 이하</span> 안전</li>
+        <li><span class="modal-tag modal-tag-warn">3.5~5%</span> 주의</li>
+        <li><span class="modal-tag modal-tag-danger">5% 초과</span> 시장 상황에 따라 성공 가능성도 있지만, 자산 고갈 가능성도 함께 높아집니다. 수익률이 좋은 해에는 여유롭게 보이다가도 하락장이 겹치면 회복이 어려워질 수 있습니다. 수입 추가나 지출 조정을 함께 검토하세요.</li>
+      </ul>
+
+      <h3>시퀀스 리스크</h3>
+      <p>은퇴 초기에 하락장이 오면 이후 회복이 어렵습니다. 차트의 수익률 시나리오 기능으로 특정 기간에 마이너스 수익률이 발생했을 때 자산이 어떻게 변하는지 직접 확인해보세요.</p>
+
+      <h3>독거 시나리오</h3>
+      <p>배우자 사망 후 홀로 남은 기간의 시뮬레이션입니다. 부부 함께 시나리오와 성공확률을 비교해 유족연금·종신보험 등 추가 보장이 필요한지 확인하세요.</p>
+
+      <div class="modal-divider"></div>
+      <div class="modal-note">
+        ⚠️ 세금(연금소득세·금융소득세 등)은 계산에 포함되지 않습니다. 실제 수령액은 세후 기준으로 별도 확인하세요.<br>
+        본 계산기는 상담용 참고자료입니다. 실제 재무 의사결정은 반드시 CFP와 상담하세요.
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+function openManual(){ document.getElementById('manual-modal').classList.add('open'); document.body.style.overflow='hidden'; }
+function closeManual(){ document.getElementById('manual-modal').classList.remove('open'); document.body.style.overflow=''; }
+function closeManualOutside(e){ if(e.target===document.getElementById('manual-modal')) closeManual(); }
+document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeManual(); });
 </script>
 </body>
 </html>
