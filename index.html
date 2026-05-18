@@ -1903,7 +1903,7 @@ function update(){
   // 시나리오A 차트는 본인 사망(mePeriod)까지 표시 — periodA(두 분 중 오래 사는 쪽)와 다를 수 있음
   const chartPeriodA = mePeriod;
   _seqChartData={investable,wA,ret,vol,periodA,inflowArrA};
-  const fanA = mcPaths(investable,wA,ret,vol,periodA,inflowArrA);
+  const fanA = mcPaths(assetAtRet,wA,ret,vol,periodA,inflowArrA); // 차트용: 버퍼 포함 전액에서 시작해 시각적 연속성 확보
   const pathOptimA = fanA.p90;
   const pathBaseA  = fanA.p50;
   const pathPessA  = fanA.p10;
