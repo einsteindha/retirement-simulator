@@ -116,7 +116,7 @@ input[type=range]{width:100%;margin-top:2px;accent-color:var(--blue)}
 .asset-input{width:100%;padding:5px 7px;border:1px solid var(--border2);border-radius:var(--radius);background:var(--bg);color:var(--text);font-size:12px}
 .port-result{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px;padding-top:10px;border-top:1px solid var(--border)}
 .pr-item{background:var(--bg2);border-radius:var(--radius);padding:8px 10px;text-align:center}
-.pr-label{font-size:10px;color:var(--text2)}.pr-val{font-size:15px;font-weight:600;margin-top:2px}
+.pr-label{font-size:10px;color:var(--text2);line-height:1.4;text-align:center}.pr-val{font-size:15px;font-weight:600;margin-top:2px}
 /* 인생 단계 */
 .stage-grid{display:grid;gap:7px}
 .stage-row{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-lg);padding:10px 13px}
@@ -364,11 +364,13 @@ input[type=range]{width:100%;margin-top:2px;accent-color:var(--blue)}
       </div>
       <div class="sn" style="margin-top:8px">은퇴 후에는 인출기 특성상 적립기보다 보수적인 수익률·변동성을 설정하는 것이 일반적입니다.</div>
     </div>
-    <div class="port-result" style="grid-template-columns:repeat(auto-fit,minmax(130px,1fr))">
-      <div class="pr-item"><div class="pr-label">적립기 수익률</div><div class="pr-val" id="port-ret-out">—</div></div>
-      <div class="pr-item"><div class="pr-label">적립기 변동성</div><div class="pr-val" id="port-vol-out">—</div></div>
-      <div class="pr-item"><div class="pr-label">인출기 수익률</div><div class="pr-val" id="port-ret-r-out">—</div></div>
-      <div class="pr-item"><div class="pr-label">인출기 실질수익률</div><div class="pr-val" id="port-real-out">—</div></div>
+    <div class="port-result">
+      <div class="pr-item"><div class="pr-label">적립기<br>수익률</div><div class="pr-val" id="port-ret-out">—</div></div>
+      <div class="pr-item"><div class="pr-label">적립기<br>변동성</div><div class="pr-val" id="port-vol-out">—</div></div>
+      <div class="pr-item"><div class="pr-label">적립기<br>실질수익률</div><div class="pr-val" id="port-real-accum-out">—</div></div>
+      <div class="pr-item"><div class="pr-label">인출기<br>수익률</div><div class="pr-val" id="port-ret-r-out">—</div></div>
+      <div class="pr-item"><div class="pr-label">인출기<br>변동성</div><div class="pr-val" id="port-vol-r-out">—</div></div>
+      <div class="pr-item"><div class="pr-label">인출기<br>실질수익률</div><div class="pr-val" id="port-real-out">—</div></div>
     </div>
   </div>
 </div>
@@ -1475,7 +1477,9 @@ function update(){
   const{ret,vol}=getPortParams('retire');
   $('port-ret-out').textContent=retAccum.toFixed(1)+'%';
   $('port-vol-out').textContent=volAccum.toFixed(1)+'%';
+  $('port-real-accum-out').textContent=Math.max(0,retAccum-infl).toFixed(1)+'%';
   const retROut=$('port-ret-r-out');if(retROut)retROut.textContent=ret.toFixed(1)+'%';
+  $('port-vol-r-out').textContent=vol.toFixed(1)+'%';
   $('port-real-out').textContent=Math.max(0,ret-infl).toFixed(1)+'%';
 
   // 단계 요약
@@ -1899,7 +1903,7 @@ function update(){
   // 시나리오A 차트는 본인 사망(mePeriod)까지 표시 — periodA(두 분 중 오래 사는 쪽)와 다를 수 있음
   const chartPeriodA = mePeriod;
   _seqChartData={investable,wA,ret,vol,periodA,inflowArrA};
-  const fanA = mcPaths(assetAtRet, wA, ret, vol, periodA, inflowArrA);
+  const fanA = mcPaths(investable,wA,ret,vol,periodA,inflowArrA);
   const pathOptimA = fanA.p90;
   const pathBaseA  = fanA.p50;
   const pathPessA  = fanA.p10;
@@ -1941,8 +1945,8 @@ function update(){
 
   // 팬 차트 데이터에 적립기 경로 앞에 붙이기
   const fullP90 = [...accumPath, ...p90A.slice(1)];
-const fullP50 = [...accumPath, ...p50A.slice(1)];
-const fullP10 = [...accumPath, ...p10A.slice(1)];
+  const fullP50 = [...accumPath, ...p50A.slice(1)];
+  const fullP10 = [...accumPath, ...p10A.slice(1)];
 
   // 상속 목표 곡선 — 본인 사망 시점(ytr+mePeriod)까지만 표시, 이후 null
   const inheritTotalYears = ytr + mePeriod; // 현재부터 본인 사망까지 총 연수
