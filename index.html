@@ -249,6 +249,7 @@ input[type=range]{width:100%;margin-top:2px;accent-color:var(--blue)}
 .cf-table td{padding:5px 7px;border-bottom:1px solid var(--border)}
 .cf-table tr:last-child td{border-bottom:none}
 .cf-stage-label{font-size:10px;padding:1px 6px;border-radius:3px;font-weight:600}
+.cf-table td:first-child{display:flex;flex-wrap:wrap;align-items:center;gap:3px;padding-top:6px;padding-bottom:6px}
 .footer{flex-shrink:0;text-align:center;padding:14px;font-size:11px;color:var(--text3);border-top:1px solid var(--border)}
 @media(max-width:600px){
   .flow-grid-4{grid-template-columns:1fr 1fr}
@@ -1508,21 +1509,83 @@ function renderCFTable(bodyId,stages,pensions,infl,evts,retireAge){
   const body=$(bodyId);body.innerHTML='';
   const activeS=stages.filter(s=>stageState[s.id].on);
   let cursor=0;
+
+  // 연금별 라벨 (개시 이벤트 행 표시용)
+  function pensionEventLabel(p){
+    if(p._label) return p._label;
+    return '공적연금 개시';
+  }
+
   activeS.forEach(st=>{
-    const s=stageState[st.id];const yS=cursor,yE=cursor+s.yrs-1;
-    const ageS=retireAge+yS,ageE=retireAge+yE;
-    const midY=(yS+yE)/2;
-    // 공적연금 + 물가연동 현금흐름만 포함 (정액연금 제외 — 별도 행 표시)
-    let totalP=0;
-    pensions.forEach(p=>{ if(midY>=p.startY) totalP+=p.amt; });
-    const ageAtMid=retireAge+Math.floor(midY);
-    let extraCFOnly=0;
-    cashflows.forEach(cf=>{const end=cf.endAge>0?cf.endAge:200;if(ageAtMid>=cf.startAge&&ageAtMid<end)extraCFOnly+=cf.amt;});
-    const totalIncome=totalP+extraCFOnly;
-    const netMon=Math.max(0,s.mon-totalIncome);
-    const tr=document.createElement('tr');
-    tr.innerHTML=`<td><span class="cf-stage-label" style="background:${st.bg};color:${st.tc}">${st.label}</span></td><td>${s.yrs}년</td><td>${ageS}→${ageE}세</td><td>${s.mon}만원</td><td>${totalIncome>0?totalIncome+'만원':'—'}</td><td style="font-weight:600">${netMon}만원</td>`;
-    body.appendChild(tr);cursor+=s.yrs;
+    const s=stageState[st.id];
+    const yS=cursor, yE=cursor+s.yrs; // yE는 exclusive (다음 단계 시작)
+
+    // ── 이 단계 내에서 분할이 필요한 기준점 수집
+    // 연금 개시 경과연도(startY)가 단계 내부에 있으면 분할점으로 추가
+    const breakYears=new Set();
+    breakYears.add(yS); // 구간 시작은 항상 포함
+    pensions.forEach(p=>{
+      if(p.startY>yS && p.startY<yE) breakYears.add(p.startY);
+    });
+    // 현금흐름 startAge/endAge도 분할점으로 포함
+    cashflows.forEach(cf=>{
+      const cfS=cf.startAge-retireAge, cfE=(cf.endAge>0?cf.endAge:200)-retireAge;
+      if(cfS>yS && cfS<yE) breakYears.add(cfS);
+      if(cfE>yS && cfE<yE) breakYears.add(cfE);
+    });
+
+    const breaks=Array.from(breakYears).sort((a,b)=>a-b);
+    const needsSplit = breaks.length > 1;
+
+    // ── 서브구간별 행 생성
+    breaks.forEach((subY, idx)=>{
+      const subYS = subY;
+      const subYE = idx+1 < breaks.length ? breaks[idx+1] : yE;
+      const subYrs = subYE - subYS;
+      if(subYrs <= 0) return;
+
+      const ageS = retireAge + subYS;
+      const ageE = retireAge + subYE - 1;
+
+      // 이 서브구간 시작 시점 기준으로 연금·현금흐름 수령액 계산
+      let totalP=0;
+      const newPensions=[]; // 이 서브구간에서 새로 시작되는 연금
+      pensions.forEach(p=>{
+        if(subYS >= p.startY){ totalP += p.amt; }
+        else if(p.startY === subYS){ newPensions.push(p); }
+      });
+      const ageAtSub = retireAge + subYS;
+      let extraCFOnly=0;
+      cashflows.forEach(cf=>{
+        const end=cf.endAge>0?cf.endAge:200;
+        if(ageAtSub>=cf.startAge && ageAtSub<end) extraCFOnly+=cf.amt;
+      });
+      const totalIncome = totalP + extraCFOnly;
+      const netMon = Math.max(0, s.mon - totalIncome);
+
+      // 라벨: 분할된 경우 ①②③ 번호 부여
+      const subNum = needsSplit ? ['①','②','③','④','⑤'][idx]||`(${idx+1})` : '';
+      const labelHtml = `<span class="cf-stage-label" style="background:${st.bg};color:${st.tc}">${st.label}${subNum}</span>`;
+
+      // 연금 개시 뱃지 (이 서브구간 시작점에서 새로 개시되는 연금)
+      let eventBadges='';
+      pensions.forEach(p=>{
+        if(p.startY === subYS && subYS > yS){
+          // 어떤 연금인지 식별
+          eventBadges += ` <span style="font-size:10px;background:#DBEAFE;color:#1E40AF;border-radius:3px;padding:1px 5px;font-weight:600">▶ ${pensionEventLabel(p)} 개시</span>`;
+        }
+      });
+
+      const ageTxt = subYrs===1 ? `${ageS}세` : `${ageS}→${ageE}세`;
+      const durTxt = subYrs===1 ? '1년' : `${subYrs}년`;
+
+      const tr=document.createElement('tr');
+      if(needsSplit && idx>0) tr.style.borderTop='1px dashed var(--border)';
+      tr.innerHTML=`<td>${labelHtml}${eventBadges}</td><td>${durTxt}</td><td>${ageTxt}</td><td>${s.mon}만원</td><td>${totalIncome>0?totalIncome+'만원':'—'}</td><td style="font-weight:600">${netMon}만원</td>`;
+      body.appendChild(tr);
+    });
+
+    cursor += s.yrs;
   });
   evts.forEach(e=>{
     const ey=e.age-retireAge;
@@ -2000,7 +2063,7 @@ function update(){
   // ── 단계별 버퍼 계산 (핵심 수정)
   const mePstartY=Math.max(0,meP.sa-retAge);
   const spPstartY=hasSp?Math.max(0,spP.sa-retAge):999;
-  const pensionsA=hasSp?[{startY:mePstartY,amt:meP.amt},{startY:spPstartY,amt:spP.amt}]:[{startY:mePstartY,amt:meP.amt}];
+  const pensionsA=hasSp?[{startY:mePstartY,amt:meP.amt,_label:'본인 공적연금'},{startY:spPstartY,amt:spP.amt,_label:'배우자 공적연금'}]:[{startY:mePstartY,amt:meP.amt,_label:'본인 공적연금'}];
   const stagesA=STAGES.filter(s=>!s.solo);
 
   // 구간 중간 시점의 인생 단계 생활비 반환 (단계별 동적 생활비)
@@ -2359,7 +2422,7 @@ function update(){
   $('s-diff').title=`조건부 성공률: 동반기 성공(${probA}%) 전제 하에 독거기간도 성공할 확률 = ${condProbS}% (mcChained 직접 계산)`;
   $('s-mon').textContent=monS+'만원';
   $('s-gap').textContent=(gapS>=0?'+':'')+fmtW(Math.abs(gapS));$('s-gap').className='mv '+(gapS>=0?'ok':'danger');$('s-gap-s').textContent=gapS>=0?`${soloName} 충분`:`${soloName} 부족`;
-  renderCFTable('cf-body-s',stagesSolo,[{startY:0,amt:sP.total}],infl,[],soloStartAge);
+  renderCFTable('cf-body-s',stagesSolo,[{startY:0,amt:sP.total,_label:'독거자 공적연금'}],infl,[],soloStartAge);
   const labS=Array.from({length:soloPeriod+1},(_,i)=>i===0?`사망(${soloDeathAge}세)`:'+'+i+'년');
   const fanS90 = mcPaths(pathOptimA[dYIdx], [], 0, wS, ret, vol, soloPeriod);
   const fanS50 = mcPaths(pathBaseA[dYIdx],  [], 0, wS, ret, vol, soloPeriod);
