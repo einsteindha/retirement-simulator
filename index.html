@@ -642,6 +642,7 @@ input[type=range]{width:100%;margin-top:2px;accent-color:var(--blue)}
   <div class="rb">
     <div class="met"><div class="ml">선행 사망 시 잔여 자산</div><div class="mv" id="s-asset">—</div><div class="ms" id="s-asset-s">—</div></div>
     <div class="met"><div class="ml">독거자 인출률</div><div class="mv" id="s-rate">—</div><div class="ms" id="s-rate-s">—</div></div>
+    <div class="met"><div class="ml">독거 현금 버퍼</div><div class="mv" id="s-buf">—</div><div class="ms">하락장 방어</div></div>
     <div class="met"><div class="ml">독거자 생존 확률</div><div class="mv" id="s-prob">—</div><div class="ms" id="s-prob-s">—</div></div>
     <div class="met"><div class="ml">독거 조건부 성공률</div><div class="mv" id="s-diff">—</div><div class="ms">동반 성공 전제</div></div>
     <div class="met"><div class="ml">독거자 월 가용</div><div class="mv" id="s-mon">—</div><div class="ms">공적연금 포함</div></div>
@@ -1140,7 +1141,7 @@ const var_blue='#378ADD',var_green='#1D9E75',var_red='#D85A30';
 function getSoloPension(){
   const own=+$('s-pension-own').value||0;
   const surv=+$('s-pension-survivor').value||0;
-  return{total:own+surv,own,surv,etc:0};
+  return{total:own+surv,own,surv};
 }
 function updateSoloPensionTotals(){
   const sP=getSoloPension();
@@ -2258,67 +2259,14 @@ function update(){
     : null;
   cA = drawFanChart('chart-a', fullP10, fullP50, fullP90, labA, cA, '#378ADD', inheritCurveA);
 
-  // 은퇴 시점 수직선 어노테이션 — 본인 은퇴 + 배우자 은퇴(spExtra>0) 구분 표시
+  // 은퇴 시점 어노테이션 메타데이터 업데이트 (플러그인은 전역 1회 등록됨)
   if(cA){
-    if(!cA._retireLineAdded){
-      cA._retireLineAdded = true;
-      cA._retireIdx   = ytr;            // 본인 은퇴 인덱스
-      // 배우자 은퇴 시점을 본인 나이 기준 인덱스로 변환
-      // 배우자 은퇴나이(spRet) 시점의 본인 나이 = spRet - spAge + age → 인덱스 = spRet - spAge
-      cA._spRetireIdx = hasSp ? (spRet - spAge) : -1;
-      cA._spExtra     = spExtra;
-      cA._retAge      = retAge;
-      cA._spRetAge    = hasSp ? spRet : retAge;  // 실제 배우자 은퇴 나이
-      Chart.register({
-        id:'retireLine_'+Date.now(),
-        afterDraw(chart){
-          if(chart!==cA) return;
-          const meta = chart.getDatasetMeta(1);
-          const {top,bottom,left,right} = chart.chartArea;
-          const ctx = chart.ctx;
-
-          // 구간 B 음영 (본인 은퇴 ~ 배우자 은퇴): 배우자 잔여 적립기 구간 강조
-          if(chart._spRetireIdx >= 0 && chart._spRetireIdx !== chart._retireIdx){
-            const idxA = Math.min(chart._retireIdx, chart._spRetireIdx);
-            const idxB = Math.max(chart._retireIdx, chart._spRetireIdx);
-            const xA = meta.data[idxA]?.x;
-            const xB = meta.data[idxB]?.x;
-            if(xA && xB){
-              ctx.save();
-              ctx.fillStyle='rgba(26,200,120,0.025)';
-              ctx.fillRect(xA, top, xB-xA, bottom-top);
-              ctx.restore();
-            }
-          }
-
-          // 본인 은퇴선 (황금색)
-          if(chart._retireIdx > 0){
-            const x = meta.data[chart._retireIdx]?.x;
-            if(x){
-              ctx.save();
-              ctx.beginPath();ctx.moveTo(x,top);ctx.lineTo(x,bottom);
-              ctx.strokeStyle='rgba(232,201,126,0.5)';ctx.lineWidth=1.5;ctx.setLineDash([4,3]);ctx.stroke();
-              ctx.fillStyle='rgba(232,201,126,0.85)';ctx.font='bold 10px sans-serif';
-              ctx.fillText('본인 은퇴('+chart._retAge+'세)', x+3, top+12);
-              ctx.restore();
-            }
-          }
-
-          // 배우자 은퇴선 (초록색, 배우자 있고 은퇴 시점이 본인과 다른 경우)
-          if(chart._spRetireIdx >= 0 && chart._spRetireIdx !== chart._retireIdx){
-            const x = meta.data[chart._spRetireIdx]?.x;
-            if(x){
-              ctx.save();
-              ctx.beginPath();ctx.moveTo(x,top);ctx.lineTo(x,bottom);
-              ctx.strokeStyle='rgba(29,158,117,0.5)';ctx.lineWidth=1.5;ctx.setLineDash([4,3]);ctx.stroke();
-              ctx.fillStyle='rgba(29,158,117,0.85)';ctx.font='bold 10px sans-serif';
-              ctx.fillText('배우자 은퇴('+chart._spRetAge+'세)', x+3, top+26);
-              ctx.restore();
-            }
-          }
-        }
-      });
-    }
+    cA._retireLineAdded = true;
+    cA._retireIdx   = ytr;
+    cA._spRetireIdx = hasSp ? (spRet - spAge) : -1;
+    cA._spExtra     = spExtra;
+    cA._retAge      = retAge;
+    cA._spRetAge    = hasSp ? spRet : retAge;
   }
   if(seqActive && cA){
     const sign=seqRetV>=0?'+':'';
@@ -2329,6 +2277,8 @@ function update(){
       borderColor:'#A855F7',borderWidth:2,
       borderDash:[6,3],pointRadius:0,fill:false,tension:.3
     });
+    cA.update('none');
+  } else if(cA){
     cA.update('none');
   }
   const inflowYears=inflows.filter(e=>e.age>=retAge&&e.age<retAge+periodA).map(e=>Math.floor(e.age-retAge));
@@ -2384,19 +2334,24 @@ function update(){
   // soloWho='me': 본인이 독거   → 배우자 사망 시점의 본인 나이  = age  + spYears
   const soloStartAge = soloWho==='sp' ? spAge + meYears : age + spYears;
   const wS=buildW(stagesSolo,[{startY:0,amt:sP.total}],soloPeriod,infl,[],soloStartAge);
-  const rateS=assetAtDeath>0?(wS[0]/assetAtDeath)*100:0;
-  // mcChained: 하나의 시뮬레이션에서 세 값 동시 추출 (통계적으로 정확한 조건부 확률)
-  // periodA = soloDeathY 이므로 Math.min 제거 (redundant guard 제거)
+  // 독거 버퍼 계산 (동반 시나리오와 동일한 방식 — 첫 독거 단계 순인출 기준)
+  const soloActiveStgs=STAGES.filter(s=>s.solo&&stageState[s.id].on);
+  const soloFirstMon=soloActiveStgs.length>0?stageState[soloActiveStgs[0].id].mon:200;
+  let soloExtraCF=0;
+  cashflows.forEach(cf=>{const end=cf.endAge>0?cf.endAge:200;if(soloStartAge>=cf.startAge&&soloStartAge<end)soloExtraCF+=cf.amt;});
+  let soloExtraFP=0;
+  fixedPensions.forEach(fp=>{const end=fp.endAge>0?fp.endAge:200;if(soloStartAge>=fp.startAge&&soloStartAge<end)soloExtraFP+=fp.amt;});
+  const soloBufNetMon=Math.max(0,soloFirstMon-sP.total-soloExtraCF-soloExtraFP);
+  const soloBufAmt=soloPeriod>0?soloBufNetMon*buf*12:0;
+  const soloInvestable=Math.max(0,assetAtDeath-soloBufAmt);
+  const rateS=soloInvestable>0?(wS[0]/soloInvestable)*100:0;
   const chainedResult = mcChained(assetNow,wAccum,ytr,wA,soloDeathY,wS,soloPeriod,ret,vol,inherit,inflowArrA);
-  const probS     = Math.round(chainedResult.probTotal * 100); // 전구간 성공률
-  const condProbS = Math.round(chainedResult.condProb  * 100); // 조건부 성공률 (mcChained 직접 계산)
-  // probA(mc 기반 동반기 성공률)를 동반탭·독거탭 공통 기준으로 사용 → 일관성 유지
-  // gapS: 연도별 직접 할인 (gapA와 동일 방식)
+  const probS     = Math.round(chainedResult.probTotal * 100);
+  const condProbS = Math.round(chainedResult.condProb  * 100);
   const wSPV = wS.reduce((s,w,i) => s + w / Math.pow(1+netRet/100, i+1), 0);
-  const neededS = wSPV + inherit*Math.pow(1+netRet/100,-soloPeriod);
+  const neededS = wSPV + inherit*Math.pow(1+netRet/100,-soloPeriod) + soloBufAmt;
   const gapS = assetAtDeath - neededS;
-  const monS=Math.round(assetAtDeath*(rateS/100)/12+sP.total);
-  const diffS = probS - probA; // 전구간(probS) vs 동반기만(probA) 차이
+  const monS=Math.round(soloInvestable*(rateS/100)/12+sP.total);
 
   const isSpSolo = soloWho==='sp';
   const soloLife = isSpSolo?spLife:meLife;
@@ -2409,13 +2364,14 @@ function update(){
   $('sh-s-desc').textContent=`${firstDied} ${soloDeathAge}세 사망 (기대수명 기준). ${soloName}이 ${soloLife}세까지 ${soloPeriod}년. 공적연금 월 ${soloPenAmt}만원.`;
   $('s-pension-label').textContent=`${soloName} 수령 공적연금 (섹션 6 입력값)`;
   $('s-pension-preview').textContent=sP.total+'만원';
-  $('s-pension-breakdown').textContent=`본인 연금 ${sP.own}만 + 유족연금 ${sP.surv}만 + 기타 ${sP.etc}만`;
+  $('s-pension-breakdown').textContent=`본인 연금 ${sP.own}만 + 유족연금 ${sP.surv}만`;
   $('cf-s-age-th').textContent=`나이(${soloName})`;
   $('cf-s-pen-th').textContent=`${soloName} 공적연금`;
   $('chart-s-title').textContent=`${soloName} 홀로 자산 — 독거 시나리오`;
 
   $('s-asset').textContent=fmtW(assetAtDeath);$('s-asset-s').textContent=`은퇴 ${soloDeathY}년 후 잔여`;
   $('s-rate').textContent=rateS.toFixed(2)+'%';$('s-rate').className='mv '+rateClass(rateS);$('s-rate-s').textContent=rateS<3.5?'안전':rateS<5?'주의':'위험';
+  $('s-buf').textContent=fmtW(soloBufAmt);
   $('s-prob').textContent=probS+'%';$('s-prob').className='mv '+probClass(probS);
   $('s-prob-s').textContent=(probS>=90?'전체 목표 달성':probS>=70?'보완 필요':'재설계 필요')+` (동반${probA}%→전체${probS}%)`;
   // s-diff: 조건부 성공률(condProbS)로 표시 — 독거 단계 자체의 실질 위험
@@ -2472,12 +2428,38 @@ function update(){
 let _updateTimer=null;
 function debouncedUpdate(){clearTimeout(_updateTimer);_updateTimer=setTimeout(update,150);}
 
-['s-pension-own','s-pension-survivor','s-pension-etc'].forEach(id=>{const el=$(id);if(el)el.addEventListener('input',debouncedUpdate);});
+['s-pension-own','s-pension-survivor'].forEach(id=>{const el=$(id);if(el)el.addEventListener('input',debouncedUpdate);});
 ['age','retire','asset','save','save-inc','save-rate','sp-age','sp-retire','sp-save','sp-save-inc','sp-save-rate','me-life','sp-life',
  'ret-simple','vol-simple','ret-retire','vol-retire','me-base','me-early','me-defer','sp-base','sp-early','sp-defer',
  'buffer','infl','inherit'
 ].forEach(id=>{const el=$(id);if(el)el.addEventListener('input',debouncedUpdate);});
 
+// 은퇴 시점 어노테이션 플러그인 — 전역 1회 등록
+if(typeof Chart!=='undefined'){
+  Chart.register({
+    id:'retireLine',
+    afterDraw(chart){
+      if(!chart._retireLineAdded) return;
+      const meta=chart.getDatasetMeta(1);
+      if(!meta||!meta.data||!meta.data.length) return;
+      const{top,bottom}=chart.chartArea;
+      const ctx=chart.ctx;
+      if(chart._spRetireIdx>=0&&chart._spRetireIdx!==chart._retireIdx){
+        const idxA=Math.min(chart._retireIdx,chart._spRetireIdx),idxB=Math.max(chart._retireIdx,chart._spRetireIdx);
+        const xA=meta.data[idxA]?.x,xB=meta.data[idxB]?.x;
+        if(xA&&xB){ctx.save();ctx.fillStyle='rgba(26,200,120,0.025)';ctx.fillRect(xA,top,xB-xA,bottom-top);ctx.restore();}
+      }
+      if(chart._retireIdx>0){
+        const x=meta.data[chart._retireIdx]?.x;
+        if(x){ctx.save();ctx.beginPath();ctx.moveTo(x,top);ctx.lineTo(x,bottom);ctx.strokeStyle='rgba(232,201,126,0.5)';ctx.lineWidth=1.5;ctx.setLineDash([4,3]);ctx.stroke();ctx.fillStyle='rgba(232,201,126,0.85)';ctx.font='bold 10px sans-serif';ctx.fillText('본인 은퇴('+chart._retAge+'세)',x+3,top+12);ctx.restore();}
+      }
+      if(chart._spRetireIdx>=0&&chart._spRetireIdx!==chart._retireIdx){
+        const x=meta.data[chart._spRetireIdx]?.x;
+        if(x){ctx.save();ctx.beginPath();ctx.moveTo(x,top);ctx.lineTo(x,bottom);ctx.strokeStyle='rgba(29,158,117,0.5)';ctx.lineWidth=1.5;ctx.setLineDash([4,3]);ctx.stroke();ctx.fillStyle='rgba(29,158,117,0.85)';ctx.font='bold 10px sans-serif';ctx.fillText('배우자 은퇴('+chart._spRetAge+'세)',x+3,top+26);ctx.restore();}
+      }
+    }
+  });
+}
 // 초기화
 buildStageGrid();
 renderEvents();
