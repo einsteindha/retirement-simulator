@@ -642,7 +642,7 @@ input[type=range]::-moz-range-thumb{width:14px;height:14px;border:none;border-ra
       </div>
       <div style="font-size:11px;color:var(--text3);margin-top:6px" id="seq-preview">— 값을 입력하고 적용 버튼을 누르세요</div>
     </div>
-    <div style="position:relative;width:100%;height:260px"><canvas id="chart-a" role="img" aria-label="동반 시나리오 자산 잔액"></canvas></div>
+    <div class="chart-wrap" style="position:relative;width:100%;height:260px"><canvas id="chart-a" role="img" aria-label="동반 시나리오 자산 잔액"></canvas></div>
     <div style="font-size:11px;color:var(--text3);margin-top:6px" id="note-a"></div>
   </div>
   <div class="adv" id="adv-a"></div>
@@ -673,7 +673,7 @@ input[type=range]::-moz-range-thumb{width:14px;height:14px;border:none;border-ra
   <div class="cc">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:7px"><span style="font-size:13px;font-weight:600" id="chart-s-title">독거자 자산</span><div class="leg"><div class="li"><div class="ld" style="background:rgba(124,92,191,0.3)"></div>상위 10%</div><div class="li"><div class="ld" style="background:#7c5cbf"></div>중앙값</div><div class="li"><div class="ld" style="background:rgba(124,92,191,0.3)"></div>하위 10%</div>
         <div class="li" id="inherit-leg-s" style="display:none"><div class="ld" style="background:var(--gold);border-top:2px dashed var(--gold);height:0"></div>상속 목표</div></div></div>
-    <div style="position:relative;width:100%;height:240px"><canvas id="chart-s" role="img" aria-label="독거 시나리오 자산 잔액"></canvas></div>
+    <div class="chart-wrap" style="position:relative;width:100%;height:240px"><canvas id="chart-s" role="img" aria-label="독거 시나리오 자산 잔액"></canvas></div>
     <div style="font-size:11px;color:var(--text3);margin-top:6px" id="note-s"></div>
   </div>
   <div class="adv" id="adv-s"></div>
@@ -1617,7 +1617,7 @@ function renderCFTable(bodyId,stages,pensions,infl,evts,retireAge){
   // 정액연금 — 하단 별도 섹션 (물가연동 없음 경고 포함)
   if(fixedPensions.length>0){
     const sepTr=document.createElement('tr');
-    sepTr.innerHTML=`<td colspan="6" style="padding:7px 8px;background:var(--gold-pale,#fdf5e0);border-top:2px solid var(--gold-light,#f0d99a);border-bottom:1px solid var(--gold-light,#f0d99a)"><span style="font-size:10px;font-weight:700;color:var(--amber,#b86e1a)">📌 정액 연금 (명목 고정)</span><span style="font-size:10px;color:var(--amber,#b86e1a);margin-left:6px">— 물가상승률이 반영되지 않아 시간이 지날수록 실질 구매력이 감소합니다. 현금흐름 계획 시 이 점을 반드시 고려하세요. 아래 실질가치는 설정된 물가상승률(${infl}%) 기준으로 할인한 값입니다.</span></td>`;
+    sepTr.innerHTML=`<td colspan="6" style="display:table-cell;padding:7px 8px;background:var(--gold-pale,#fdf5e0);border-top:2px solid var(--gold-light,#f0d99a);border-bottom:1px solid var(--gold-light,#f0d99a)"><span style="font-size:10px;font-weight:700;color:var(--amber,#b86e1a)">📌 정액 연금 (명목 고정)</span><span style="font-size:10px;color:var(--amber,#b86e1a);margin-left:6px">— 물가상승률이 반영되지 않아 시간이 지날수록 실질 구매력이 감소합니다. 현금흐름 계획 시 이 점을 반드시 고려하세요. 아래 실질가치는 설정된 물가상승률(${infl}%) 기준으로 할인한 값입니다.</span></td>`;
     body.appendChild(sepTr);
     fixedPensions.forEach(fp=>{
       const startYr = Math.max(0, fp.startAge - retireAge);
@@ -2650,7 +2650,40 @@ function doPrint(){
   document.body.classList.toggle('print-has-sp', hasSp);
   window.print();
 }
-window.addEventListener('afterprint',()=>document.body.classList.remove('print-has-sp'));
+
+// A4 인쇄 가능 높이 (297mm - 상하 10mm 여백 = 277mm ≈ 1047 CSS px)에서
+// 헤더 높이 등 여유를 빼고 950을 목표로 각 패널을 한 페이지에 맞게 축소
+const _PRINT_PAGE_H = 950;
+
+window.addEventListener('beforeprint', function(){
+  // 차트를 인쇄 CSS 적용 후 크기로 리사이즈
+  if(cA) try{cA.resize();}catch(e){}
+  if(cS) try{cS.resize();}catch(e){}
+
+  // 각 패널 높이 측정 → 필요 시 zoom 적용
+  ['panel-a','panel-s'].forEach(function(id){
+    const el=document.getElementById(id);
+    if(!el) return;
+    if(getComputedStyle(el).display==='none') return;
+    el.style.zoom=''; // 이전 zoom 초기화 후 측정
+    const h=el.scrollHeight;
+    if(h>_PRINT_PAGE_H) el.style.zoom=String((_PRINT_PAGE_H/h).toFixed(4));
+  });
+});
+
+window.addEventListener('afterprint', function(){
+  document.body.classList.remove('print-has-sp');
+  // zoom 초기화
+  ['panel-a','panel-s'].forEach(function(id){
+    const el=document.getElementById(id);
+    if(el) el.style.zoom='';
+  });
+  // 차트 원래 크기로 복원
+  setTimeout(function(){
+    if(cA) try{cA.resize();}catch(e){}
+    if(cS) try{cS.resize();}catch(e){}
+  }, 50);
+});
 
 (function(){
   const s=document.createElement('style');
@@ -2685,6 +2718,7 @@ window.addEventListener('afterprint',()=>document.body.classList.remove('print-h
   .seq-leg{display:none!important}
   /* 차트 */
   canvas{max-width:100%!important}
+  .chart-wrap{height:150px!important}
   .cc{break-inside:avoid;margin-bottom:6px!important;padding:8px!important}
   /* 현금흐름 테이블 */
   .cf-table{font-size:10px!important}
