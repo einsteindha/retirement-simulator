@@ -1804,7 +1804,7 @@ function update(){
       const el=$('styr-'+s.id);
       const rem=$('styr-rem-'+s.id);
       if(stageState[s.id].on){
-        if(el) el.max=Math.min(65, stageState[s.id].yrs + Math.max(0,cLeft));
+        if(el){el.max=Math.min(65, stageState[s.id].yrs + Math.max(0,cLeft));_rp(el);}
         if(rem){
           if(cLeft>0){ rem.textContent=`(잔여 ${cLeft}년)`; rem.style.color='var(--text3)'; }
           else { rem.textContent=''; }
@@ -1818,7 +1818,7 @@ function update(){
       const el=$('styr-'+s.id);
       const rem=$('styr-rem-'+s.id);
       if(hasSp&&stageState[s.id].on){
-        if(el) el.max=Math.min(65, stageState[s.id].yrs + Math.max(0,sLeft));
+        if(el){el.max=Math.min(65, stageState[s.id].yrs + Math.max(0,sLeft));_rp(el);}
         if(rem){
           if(sLeft>0){ rem.textContent=`(잔여 ${sLeft}년)`; rem.style.color='var(--text3)'; }
           else { rem.textContent=''; }
