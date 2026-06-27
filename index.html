@@ -584,14 +584,14 @@ input[type=range]::-moz-range-thumb{width:14px;height:14px;border:none;border-ra
 <div class="split-right">
 <div class="pt" style="margin-bottom:13px;font-size:12px">결과 — 시나리오 선택 <span style="font-size:10px;color:var(--text3);font-weight:400">(입력 변경 시 실시간 업데이트)</span></div>
 
-<div class="sc-tabs">
-  <button class="sc-btn act-a" id="tab-a" onclick="switchTab('a')"><span id="tab-a-title">부부/동반 함께</span><br><span style="font-size:11px;font-weight:400;color:inherit">기준 시나리오</span><span class="stag tag-a">기준</span><br><span style="font-size:11px;color:inherit" id="tab-a-p">—</span></button>
+<div class="sc-tabs" id="sc-tabs" style="display:none">
+  <button class="sc-btn act-a" id="tab-a" onclick="switchTab('a')"><span id="tab-a-title">본인</span><br><span style="font-size:11px;font-weight:400;color:inherit">기준 시나리오</span><span class="stag tag-a">기준</span><br><span style="font-size:11px;color:inherit" id="tab-a-p">—</span></button>
   <button class="sc-btn" id="tab-s" onclick="switchTab('s')">독거 시나리오<br><span style="font-size:11px;font-weight:400;color:inherit" id="tab-s-who">—</span><span class="stag tag-b" id="tab-s-tag">독거</span><br><span style="font-size:11px;color:inherit" id="tab-s-p">—</span></button>
 </div>
 
 <!-- 패널 A -->
 <div class="rp active" id="panel-a">
-  <div class="sh sh-a"><b style="color:var(--gold)" id="sh-a-title">동반 시나리오 — 부부/동반 함께 생존</b><br><span id="sh-a-desc" style="color:var(--amber);font-size:12px">—</span></div>
+  <div class="sh sh-a"><b style="color:var(--gold)" id="sh-a-title">본인 시나리오 — 본인 기준</b><br><span id="sh-a-desc" style="color:var(--amber);font-size:12px">—</span></div>
   <div class="rb">
     <div class="met"><div class="ml">은퇴 시점 예상 자산</div><div class="mv" id="a-asset">—</div><div class="ms" id="a-asset-s">—</div></div>
     <div class="met"><div class="ml">1년차 인출률</div><div class="mv" id="a-rate">—</div><div class="ms" id="a-rate-s">—</div></div>
@@ -1898,10 +1898,13 @@ function update(){
   if(_el('asset-a-title')) _el('asset-a-title').textContent = lbl.assetA;
   $('tab-a-p').textContent=periodA+'년 계획';
   const tabS=$('tab-s');
+  const scTabsEl=$('sc-tabs');
+  const showTabs=(hasSp && soloPeriod>0);
+  if(scTabsEl) scTabsEl.style.display=showTabs?'':'none';
   if(tabS){
     $('tab-s-who').textContent=hasSp?soloWhoLabel:'본인 단독';
     $('tab-s-p').textContent=hasSp?`독거 ${soloPeriod}년`:'';
-    tabS.style.display=(hasSp && soloPeriod>0)?'':'none';
+    tabS.style.display=showTabs?'':'none';
   }
 
   if(retAge<age){$('err-retire').textContent='은퇴 나이가 현재 나이보다 작을 수 없습니다.';return;}$('err-retire').textContent='';
