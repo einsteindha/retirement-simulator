@@ -2650,26 +2650,31 @@ function showToast(msg){
 }
 
 // ── 출력 ─────────────────────────────────────────────────────────
-function doPrint(){
-  document.body.classList.toggle('print-has-sp', hasSp);
-  window.print();
-}
-
 // A4 인쇄 가능 높이 (297mm - 상하 10mm 여백 = 277mm ≈ 1047 CSS px)에서
 // 헤더 높이 등 여유를 빼고 1000을 목표로 각 패널을 한 페이지에 맞게 축소
 const _PRINT_PAGE_H = 1000;
 
-window.addEventListener('beforeprint', function(){
-  // 차트를 인쇄 CSS 적용 후 크기로 리사이즈
+function doPrint(){
+  document.body.classList.toggle('print-has-sp', hasSp);
+  // 차트 컨테이너를 인쇄용 높이(150px)로 먼저 설정 후 Chart.js 리사이즈
+  // beforeprint 시점에는 JS layout API가 print CSS를 반영하지 않을 수 있어
+  // doPrint에서 직접 처리한 뒤 100ms 뒤 window.print() 호출
+  var elA=document.getElementById('chart-a'), wrapA=elA&&elA.parentElement;
+  var elS=document.getElementById('chart-s'), wrapS=elS&&elS.parentElement;
+  if(wrapA) wrapA.style.height='150px';
+  if(wrapS) wrapS.style.height='150px';
   if(cA) try{cA.resize();}catch(e){}
   if(cS) try{cS.resize();}catch(e){}
+  setTimeout(function(){ window.print(); }, 100);
+}
 
-  // 각 패널 높이 측정 → 필요 시 zoom 적용
+window.addEventListener('beforeprint', function(){
+  // 차트는 doPrint에서 이미 리사이즈 완료 — 패널 높이 측정 후 zoom 적용만 수행
   ['panel-a','panel-s'].forEach(function(id){
     const el=document.getElementById(id);
     if(!el) return;
     if(getComputedStyle(el).display==='none') return;
-    el.style.zoom=''; // 이전 zoom 초기화 후 측정
+    el.style.zoom='';
     const h=el.scrollHeight;
     if(h>_PRINT_PAGE_H) el.style.zoom=String((_PRINT_PAGE_H/h).toFixed(4));
   });
@@ -2682,7 +2687,11 @@ window.addEventListener('afterprint', function(){
     const el=document.getElementById(id);
     if(el) el.style.zoom='';
   });
-  // 차트 원래 크기로 복원
+  // 차트 컨테이너 및 크기 원복
+  var elA=document.getElementById('chart-a'), wrapA=elA&&elA.parentElement;
+  var elS=document.getElementById('chart-s'), wrapS=elS&&elS.parentElement;
+  if(wrapA) wrapA.style.height='260px';
+  if(wrapS) wrapS.style.height='240px';
   setTimeout(function(){
     if(cA) try{cA.resize();}catch(e){}
     if(cS) try{cS.resize();}catch(e){}
@@ -2701,7 +2710,7 @@ window.addEventListener('afterprint', function(){
   /* 컨테이너: 결과 먼저(right→left) */
   .container{display:flex!important;flex-direction:column!important;height:auto!important}
   .split-right{order:-1!important;width:100%!important;flex:none!important;height:auto!important;overflow:visible!important;padding:8px 0 0!important;border-left:none!important;background:transparent!important}
-  .split-left{width:100%!important;flex:none!important;height:auto!important;overflow:visible!important;overflow-x:hidden!important;padding:8px 0 0!important;page-break-before:always;break-before:page}
+  .split-left{width:100%!important;flex:none!important;height:auto!important;overflow:visible!important;overflow-x:hidden!important;padding:8px 0 0!important;page-break-before:always;break-before:page;font-size:11px!important}
   /* 탭 숨기고 두 패널 모두 표시 */
   .sc-tabs{display:none!important}
   .rp{display:block!important}
@@ -2720,9 +2729,9 @@ window.addEventListener('afterprint', function(){
   /* 시퀀스 리스크 입력 숨김 */
   .seq-ctrl-wrap{display:none!important}
   .seq-leg{display:none!important}
-  /* 차트: overflow:hidden으로 캔버스가 컨테이너를 넘어 아래 텍스트를 덮는 현상 방지 */
+  /* 차트: doPrint에서 JS로 resize 처리하므로 높이 제한만 유지 */
   canvas{max-width:100%!important}
-  .chart-wrap{height:150px!important;overflow:hidden!important}
+  .chart-wrap{height:150px!important}
   .cc{break-inside:avoid;margin-bottom:6px!important;padding:8px!important}
   /* 현금흐름 테이블 */
   .cf-table{font-size:11px!important}
