@@ -2134,9 +2134,12 @@ function update(){
     if(T.spRet !== null && T.spRet > 0) milestones.add(T.spRet);
     if(T.mePen > 0) milestones.add(T.mePen);
     if(T.spPen !== null && T.spPen > 0) milestones.add(T.spPen);
-    // 마지막 연금 개시 이후 구간도 포함
-    const lastPen = Math.max(T.mePen, T.spPen !== null ? T.spPen : 0);
-    milestones.add(lastPen + 1);
+    // 인생 단계 경계도 구간 마일스톤에 추가 (단계별 생활비 변경 반영)
+    const coupleOnStgs = STAGES.filter(s=>!s.solo&&stageState[s.id].on);
+    let stgCursor = 0;
+    coupleOnStgs.forEach(s => { stgCursor += stageState[s.id].yrs; milestones.add(stgCursor); });
+    // 단계가 없는 경우 대비: 마지막 연금 개시+1을 보정값으로 추가
+    if(stgCursor === 0){ const lastPen=Math.max(T.mePen,T.spPen!==null?T.spPen:0); milestones.add(lastPen+1); }
 
     const points = [...milestones].sort((a,b)=>a-b);
     const segments = [];
@@ -2173,10 +2176,9 @@ function update(){
         desc = hasSp ? '부부 모두 공적연금 수령' : '본인 공적연금 수령';
       }
 
-      // 추가 수입 (현금흐름·정액연금)
+      // 추가 수입 (현금흐름만 — CF 테이블 "월 인출 필요"와 동일 기준)
       let extraIncome = 0;
       cashflows.forEach(cf => { const end=cf.endAge>0?cf.endAge:200; if(ageAtMid>=cf.startAge&&ageAtMid<end) extraIncome+=cf.amt; });
-      fixedPensions.forEach(fp => { const end=fp.endAge>0?fp.endAge:200; if(ageAtMid>=fp.startAge&&ageAtMid<end) extraIncome+=fp.amt; });
 
       const totalIncome = pension + extraIncome;
       // 구간 실제 Gap = 생활비 - 모든 수입
@@ -2415,14 +2417,22 @@ function update(){
   // soloWho='me': 본인이 독거   → 배우자 사망 시점의 본인 나이  = age  + spYears
   const soloStartAge = soloWho==='sp' ? spAge + meYears : age + spYears;
   const wS=buildW(stagesSolo,[{startY:0,amt:sP.total}],soloPeriod,infl,[],soloStartAge);
-  // 독거 버퍼 계산 (동반 시나리오와 동일한 방식 — 첫 독거 단계 순인출 기준)
+  // 독거 버퍼 계산 — 전체 독거 단계 중 최대 월 순인출 기준 (CF 테이블과 동일 기준)
   const soloActiveStgs=STAGES.filter(s=>s.solo&&stageState[s.id].on);
-  const soloFirstMon=soloActiveStgs.length>0?stageState[soloActiveStgs[0].id].mon:200;
-  let soloExtraCF=0;
-  cashflows.forEach(cf=>{const end=cf.endAge>0?cf.endAge:200;if(soloStartAge>=cf.startAge&&soloStartAge<end)soloExtraCF+=cf.amt;});
-  let soloExtraFP=0;
-  fixedPensions.forEach(fp=>{const end=fp.endAge>0?fp.endAge:200;if(soloStartAge>=fp.startAge&&soloStartAge<end)soloExtraFP+=fp.amt;});
-  const soloBufNetMon=Math.max(0,soloFirstMon-sP.total-soloExtraCF-soloExtraFP);
+  let soloBufNetMon=0;
+  if(soloActiveStgs.length>0){
+    let soloCursor=0;
+    soloActiveStgs.forEach(sg=>{
+      const mon=stageState[sg.id].mon;
+      const yrs=stageState[sg.id].yrs;
+      const midAge=soloStartAge+soloCursor+yrs/2;
+      let sCF=0;
+      cashflows.forEach(cf=>{const end=cf.endAge>0?cf.endAge:200;if(midAge>=cf.startAge&&midAge<end)sCF+=cf.amt;});
+      const net=Math.max(0,mon-sP.total-sCF);
+      if(net>soloBufNetMon)soloBufNetMon=net;
+      soloCursor+=yrs;
+    });
+  }
   const soloBufAmt=soloPeriod>0?soloBufNetMon*buf*12:0;
   const soloInvestable=Math.max(0,assetAtDeath-soloBufAmt);
   const rateS=soloInvestable>0?(wS[0]/soloInvestable)*100:0;
